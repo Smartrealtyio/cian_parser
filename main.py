@@ -15,6 +15,7 @@ page = requests.get(url, headers = headers).text
 #     page = f.read()
 
 # ---------------------------------------------
+yand_api_token = '31a6ed51-bc46-4d1d-9ac9-e3c2e22d2628'
 
 from bs4 import BeautifulSoup
 soup = BeautifulSoup(page, 'lxml')
