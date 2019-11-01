@@ -233,3 +233,5 @@ class CianParser():
 
 parser = CianParser('https://www.cian.ru/cat.php?currency=2&deal_type=sale&engine_version=2&maxprice=35000000&offer_type=flat&p={}&region=1&room6=1')
 parser.parse()
+
+# parser.parse_flat_info('https://www.cian.ru/sale/flat/209022463/')
