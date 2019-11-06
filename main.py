@@ -43,8 +43,11 @@ class CianParser():
     }
 
     def parse_flat_info(self, url):
-        page = requests.get(url, headers=self.headers, timeout=3).text
+        # page = requests.get(url, headers=self.headers, timeout=3).text
         # print(page)
+        with open('page.html') as f:
+            page = f.read()
+
         soup = BeautifulSoup(page, 'lxml')
 
         address = soup.find('div', {'class': 'a10a3f92e9--geo--18qoo'}).find('span').get('content').split(',')
@@ -215,43 +218,90 @@ class CianParser():
         return result
 
     def save_to_db(self, flat):
-        conn = psycopg2.connect(host='localhost', dbname='video_analytics', user='va', password='theorema')
+        conn = psycopg2.connect(host='localhost', dbname='yand_cian', user='cian_parser', password='DYqmyKe4')
         cur = conn.cursor()
 
-        cur.execute('select id from districts where name={};'.format(flat.district))
-        district_id = cur.fetchone()
+        cur.execute("select id from districts where name=%s;", (flat['district'],))
+        district_id = cur.fetchone()[0]
+        print(district_id)
 
         metro_ids = {}
-        for metro in flat.metros:
-            cur.execute('select id from metros where name={};'.format(metro))
-            metro_ids.update({metro: cur.fetchone()})
+        for metro in flat['metros']:
+            try:
+                cur.execute("select id from metros where name=%s;", (metro,))
+                metro_id = cur.fetchone()[0]
+                metro_ids.update({metro: metro_id})
+            except:
+                continue
 
-        cur.execute('select * from buildings where address={};'.format(flat.address))
+        cur.execute("select * from buildings where address=%s;", (flat['address'],))
         is_building_exist = cur.fetchone()
-        if not building:
+        if not is_building_exist:
             cur.execute(
-                'insert into buildings values ({max_floor}, {building_type_str}, {built_year}, {flats_count}, {address}, {renovation}, {has_elevator}, {longitude}, {latitude}, {district_id}, {created_at}, {updated_at});'.format(
-                    flat['max_floor'], flat['building_type_str'], flat['built_year'], flat['flats_count'],
-                    flat['address'], flat['renovation'], flat['has_elevator'], flat['longitude'], flat['latitude'],
-                    district_id)
-            )
-            cur.execute('select id from buildings where address={};'.format(flat['addres']))
-            building_id = cur.fetchone()
+                """insert into buildings 
+                   (max_floor, building_type_str, built_year, flats_count, address, renovation, 
+                    has_elevator, longitude, latitude, district_id, created_at, updated_at)
+                   values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);""", (
+                    flat['max_floor'],
+                    flat['building_type_str'],
+                    flat['built_year'],
+                    flat['flats_count'],
+                    flat['address'],
+                    flat['renovation'],
+                    flat['has_elevator'],
+                    flat['longitude'],
+                    flat['latitude'],
+                    district_id,
+                    datetime.now(),
+                    datetime.now()
+                ))
+            cur.execute("select id from buildings where address=%s;", (flat['address'],))
+            building_id = cur.fetchone()[0]
+            print(building_id)
             for metro, metro_id in metro_ids.items():
                 cur.execute(
-                    'insert into time_metro_buildings values ({building_id}, {metro_id}, {time_to_metro}, {transport_type}, {created_at}, {updated_at});'.format(
-                        building_id, metro_id, flat['metros'][metro]['time_to_metro'],
-                        flat['metros'][metro]['transport_type']
+                    """insert into time_metro_buildings (building_id, metro_id, time_to_metro, transport_type, created_at, updated_at) 
+                       values (%s, %s, %s, %s, %s, %s);""", (
+                        building_id,
+                        metro_id,
+                        flat['metros'][metro]['time_to_metro'],
+                        flat['metros'][metro]['transport_type'],
+                        datetime.now(),
+                        datetime.now()
                     ))
 
-        cur.execute('select * from flats where offer_id={}'.format(flat['offer_id']))
+        cur.execute('select * from flats where offer_id=%s', (flat['offer_id'],))
         is_offer_exist = cur.fetchone()
+        print(is_offer_exist)
         if not is_offer_exist:
             cur.execute(
-                'insert into flats values ({full_sq}, {kitchen_sq}, {life_sq}, {floor}, {is_apartment}, {building_id}, {created_at}, {updated_at}, {offer_id}, {closed})'.format(
-                    flat['full_sq'], flat['kitchen_sq'], flat['life_sq'], flat['floor'], flat['is_apartment'],
-                    flat['building_id'], flat['created_at'], flat['updated_at'], flat['offer_id'], flat['closed']
+                """insert into flats (full_sq, kitchen_sq, life_sq, floor, is_apartment, building_id, created_at, updated_at, offer_id, closed, created_at, updated_at) 
+                   values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""", (
+                    flat['full_sq'],
+                    flat['kitchen_sq'],
+                    flat['life_sq'],
+                    flat['floor'],
+                    flat['is_apartment'],
+                    flat['building_id'],
+                    flat['created_at'],
+                    flat['updated_at'],
+                    flat['offer_id'],
+                    flat['closed'],
+                    datetime.now(),
+                    datetime.now()
                 ))
+            cur.execute('select id from flats where offer_id=%s;', (flat['offer_id'],))
+            flat_id = cur.fetchone()[0]
+            for price_info in flat['prices']:
+                cur.execute("""insert into prices (price, changed_date, flat_id, created_at, updated_at) 
+                               values (%s, %s, %s, %s, %s);""", (
+                    price_info[1],
+                    price_info[0],
+                    flat_id,
+                    datetime.now(),
+                    datetime.now()
+                ))
+
 
     def get_flats_url(self, url):
         response = requests.get(url, self.headers, timeout=3).text
@@ -292,7 +342,7 @@ class CianParser():
             try:
                 result = self.parse_flat_info(url)
                 print(result)
-                self.save_to_db(result)
+                # self.save_to_db(result)
                 time.sleep(2)
             except:
                 print('fail ', url)
@@ -302,5 +352,9 @@ class CianParser():
 
 
 parser = CianParser()
-parser.parse(
-    'https://www.cian.ru/cat.php?deal_type=sale&engine_version=2&offer_type=flat&p={}&region=1&room1=1&room2=1')
+# parser.parse(
+    # 'https://www.cian.ru/cat.php?deal_type=sale&engine_version=2&offer_type=flat&p={}&region=1&room1=1&room2=1')
+
+res = parser.parse_flat_info('https://www.cian.ru/sale/flat/209104013/')
+print(res)
+parser.save_to_db(res)
