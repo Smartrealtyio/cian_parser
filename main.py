@@ -19,6 +19,7 @@ class CianParser():
         'бул.': 'бульвар',
         'деревня': 'деревня'
     }
+    district_names = ['р-н', 'деревня', 'поселение', 'поселок']
     months = {
         'января': 1,
         'февраля': 2,
@@ -43,10 +44,10 @@ class CianParser():
     }
 
     def parse_flat_info(self, url):
-        # page = requests.get(url, headers=self.headers, timeout=3).text
+        page = requests.get(url, headers=self.headers, timeout=3).text
         # print(page)
-        with open('page.html') as f:
-            page = f.read()
+        # with open('page.html') as f:
+        #     page = f.read()
 
         soup = BeautifulSoup(page, 'lxml')
 
@@ -98,13 +99,6 @@ class CianParser():
 
         offer_id = url.split('/')[-2]
 
-        coords_response = requests.get(
-            f'https://geocode-maps.yandex.ru/1.x/?apikey={self.yand_api_token}&format=json&geocode={",".join(address)}').text
-        coords = \
-            json.loads(coords_response)['response']['GeoObjectCollection']['featureMember'][0]['GeoObject']['Point'][
-                'pos']
-        longitude, latitude = coords.split(' ')
-
         # -------------------
         # preparation
 
@@ -117,7 +111,14 @@ class CianParser():
             })
 
         city = address[0]
-        district = " ".join(address[-3].split(' ')[1:])
+        district_pieces = address[-3].split(' ')
+        if district_pieces[0] in self.district_names:
+            district = " ".join(district_pieces[1:])
+        elif district_pieces[-1] in self.district_names:
+            district = " ".join(district_pieces[:-1])
+        else:
+            district = " ".join(district_pieces)
+
         street = []
         for i in address[-2].split(' '):
             if i in self.street_names:
@@ -190,15 +191,12 @@ class CianParser():
         else:
             address = ', '.join(['Россия', address[0], address[1], street, house_number])
 
-        longitude = float(longitude)
-        latitude = float(latitude)
-
         result = {
             'offer_id': offer_id,
             'district': district,
             'address': address,
             'full_sq': full_sq,
-            'live_sq': life_sq,
+            'life_sq': life_sq,
             'kitchen_sq': kitchen_sq,
             'floor': floor,
             'max_floor': max_floor,
@@ -210,20 +208,25 @@ class CianParser():
             'building_type_str': building_type_str,
             'has_elevator': has_elevator,
             'prices': prices,
-            'metros': metros,
-            'longitude': longitude,
-            'latitude': latitude
+            'metros': metros
         }
 
         return result
 
     def save_to_db(self, flat):
-        conn = psycopg2.connect(host='localhost', dbname='yand_cian', user='cian_parser', password='DYqmyKe4')
-        cur = conn.cursor()
+        try:
+            conn = psycopg2.connect(host='localhost', dbname='yand_cian', user='cian_parser', password='DYqmyKe4')
+            cur = conn.cursor()
+        except:
+            return False
 
         cur.execute("select id from districts where name=%s;", (flat['district'],))
-        district_id = cur.fetchone()[0]
-        print(district_id)
+        try:
+            district_id = cur.fetchone()[0]
+        except:
+            print('district does not exist')
+            return False
+        print('district_id', district_id)
 
         metro_ids = {}
         for metro in flat['metros']:
@@ -232,11 +235,26 @@ class CianParser():
                 metro_id = cur.fetchone()[0]
                 metro_ids.update({metro: metro_id})
             except:
+                print('metro', metro, 'does not exist')
                 continue
 
-        cur.execute("select * from buildings where address=%s;", (flat['address'],))
+        cur.execute("select id from buildings where address=%s;", (flat['address'],))
         is_building_exist = cur.fetchone()
         if not is_building_exist:
+            try:
+                coords_response = requests.get(
+                    f'https://geocode-maps.yandex.ru/1.x/?apikey={self.yand_api_token}&format=json&geocode={",".join(flat["address"])}').text
+                coords = \
+                    json.loads(coords_response)['response']['GeoObjectCollection']['featureMember'][0]['GeoObject'][
+                        'Point'][
+                        'pos']
+                longitude, latitude = coords.split(' ')
+                longitude = float(longitude)
+                latitude = float(latitude)
+            except IndexError:
+                print('bad address for yandex-api', flat['address'])
+                return False
+
             cur.execute(
                 """insert into buildings 
                    (max_floor, building_type_str, built_year, flats_count, address, renovation, 
@@ -249,15 +267,15 @@ class CianParser():
                     flat['address'],
                     flat['renovation'],
                     flat['has_elevator'],
-                    flat['longitude'],
-                    flat['latitude'],
+                    longitude,
+                    latitude,
                     district_id,
                     datetime.now(),
                     datetime.now()
                 ))
             cur.execute("select id from buildings where address=%s;", (flat['address'],))
             building_id = cur.fetchone()[0]
-            print(building_id)
+            print('building_id', building_id)
             for metro, metro_id in metro_ids.items():
                 cur.execute(
                     """insert into time_metro_buildings (building_id, metro_id, time_to_metro, transport_type, created_at, updated_at) 
@@ -269,30 +287,38 @@ class CianParser():
                         datetime.now(),
                         datetime.now()
                     ))
+        else:
+            building_id = is_building_exist[0]
+            print('building already exist', building_id)
 
         cur.execute('select * from flats where offer_id=%s', (flat['offer_id'],))
         is_offer_exist = cur.fetchone()
-        print(is_offer_exist)
         if not is_offer_exist:
             cur.execute(
-                """insert into flats (full_sq, kitchen_sq, life_sq, floor, is_apartment, building_id, created_at, updated_at, offer_id, closed, created_at, updated_at) 
-                   values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""", (
+                """insert into flats (full_sq, kitchen_sq, life_sq, floor, is_apartment, building_id, created_at, updated_at, offer_id, closed) 
+                   values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""", (
                     flat['full_sq'],
                     flat['kitchen_sq'],
                     flat['life_sq'],
                     flat['floor'],
                     flat['is_apartment'],
-                    flat['building_id'],
-                    flat['created_at'],
-                    flat['updated_at'],
-                    flat['offer_id'],
-                    flat['closed'],
+                    building_id,
                     datetime.now(),
-                    datetime.now()
+                    datetime.now(),
+                    flat['offer_id'],
+                    flat['closed']
                 ))
             cur.execute('select id from flats where offer_id=%s;', (flat['offer_id'],))
             flat_id = cur.fetchone()[0]
-            for price_info in flat['prices']:
+            print('flat_id', flat_id)
+        else:
+            flat_id = is_offer_exist[0]
+            print('flat already exist', flat_id)
+
+        for price_info in flat['prices']:
+            cur.execute('select * from prices where changed_date=%s', (price_info[0],))
+            is_price_exist = cur.fetchone()
+            if not is_price_exist:
                 cur.execute("""insert into prices (price, changed_date, flat_id, created_at, updated_at) 
                                values (%s, %s, %s, %s, %s);""", (
                     price_info[1],
@@ -302,9 +328,15 @@ class CianParser():
                     datetime.now()
                 ))
 
+        conn.commit()
+        cur.close()
+
+        return True
+
 
     def get_flats_url(self, url):
         response = requests.get(url, self.headers, timeout=3).text
+        # print(response)
         soup = BeautifulSoup(response, 'lxml')
         pages_response = soup.find_all('a', {'class': 'c6e8ba5398--header--1fV2A'})
         pages_url = [page.get('href') for page in pages_response]
@@ -318,43 +350,50 @@ class CianParser():
 
         return pages_url, next_page_number
 
-    def get_setOfPages_url(self, url):
-        all_urls = []
+    def parse(self, url):
         page_number = 1
         next_page_number = 1
+        count = 0
+        parsed_count = 0
+        saved_count = 0
         while (page_number == next_page_number):
+            time.sleep(3)
             res_url = url.format(page_number)
+            print(res_url)
             page_number += 1
             new_urls, next_page_number = self.get_flats_url(res_url)
-            all_urls += new_urls
-            print(new_urls)
 
-            time.sleep(2)
-        print(len(all_urls))
+            print(*new_urls, sep='\n')
+            for flat_url in new_urls:
+                result = None
+                try:
+                    result = self.parse_flat_info(flat_url)
+                    print('parsed ok')
+                    parsed_count += 1
+                except:
+                    print('fail in parsing ', flat_url)
+                if result:
+                    # try:
+                    if self.save_to_db(result):
+                        print('saved ok')
+                        saved_count += 1
+                    else:
+                        print('fail in saving')
+                    # except:
+                    #     print('fail in saving', flat_url, result)
 
-        return all_urls
+                count += 1
+                time.sleep(3)
 
-    def parse(self, url):
-        urls = self.get_setOfPages_url(url)
-        print(*urls, sep='\n')
-        count = 0
-        for url in urls:
-            try:
-                result = self.parse_flat_info(url)
-                print(result)
-                # self.save_to_db(result)
-                time.sleep(2)
-            except:
-                print('fail ', url)
-            count += 1
+            print('end for page', count, 'parsed', parsed_count, 'saved', saved_count)
 
-        print('end ', count)
+        print('end', count, 'parsed', parsed_count, 'saved', saved_count)
 
 
 parser = CianParser()
-# parser.parse(
-    # 'https://www.cian.ru/cat.php?deal_type=sale&engine_version=2&offer_type=flat&p={}&region=1&room1=1&room2=1')
+parser.parse(
+    'https://www.cian.ru/cat.php?deal_type=sale&engine_version=2&maxkarea=40&minkarea=40&object_type%5B0%5D=1&offer_type=flat&p={}&region=1')
 
-res = parser.parse_flat_info('https://www.cian.ru/sale/flat/209104013/')
-print(res)
-parser.save_to_db(res)
+# res = parser.parse_flat_info('https://www.cian.ru/sale/flat/219124502/')
+# print(res)
+# parser.save_to_db(res)
