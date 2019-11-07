@@ -49,10 +49,15 @@ class CianParser():
         # with open('page.html') as f:
         #     page = f.read()
 
+        # All responses
+
         soup = BeautifulSoup(page, 'lxml')
 
         address = soup.find('div', {'class': 'a10a3f92e9--geo--18qoo'}).find('span').get('content').split(',')
         address = [i.strip() for i in address]
+
+
+        rooms_info = soup.find('h1', {'class': 'a10a3f92e9--title--2Widg'}).text.split(',')[0].lower()
 
         metros_response = soup.find_all('li', {'class': 'a10a3f92e9--underground--kONgx'})
         metros = {}
@@ -100,7 +105,7 @@ class CianParser():
         offer_id = url.split('/')[-2]
 
         # -------------------
-        # preparation
+        # Data transformation to correct type
 
         for metro, data in metros.items():
             metros.update({
@@ -191,8 +196,15 @@ class CianParser():
         else:
             address = ', '.join(['Россия', address[0], address[1], street, house_number])
 
+
+        if rooms_info == 'студия' or rooms_info == 'апартаменты-студия':
+            rooms_count = -1
+        else:
+            rooms_count = int(''.join([i for i in rooms_info.split(' ')[0] if i.isdigit()]))
+
         result = {
             'offer_id': offer_id,
+            'rooms_count': rooms_count,
             'district': district,
             'address': address,
             'full_sq': full_sq,
@@ -381,7 +393,7 @@ class CianParser():
                         print('fail in saving')
                     # except:
                     #     print('fail in saving', flat_url, result)
-
+                print()
                 count += 1
                 time.sleep(3)
 
@@ -391,9 +403,22 @@ class CianParser():
 
 
 parser = CianParser()
-parser.parse(
-    'https://www.cian.ru/cat.php?deal_type=sale&engine_version=2&maxkarea=40&minkarea=40&object_type%5B0%5D=1&offer_type=flat&p={}&region=1')
 
-# res = parser.parse_flat_info('https://www.cian.ru/sale/flat/219124502/')
-# print(res)
+minkareas = [i for i in range(11, 110)] + [i for i in range(110, 150, 5)] + [i for i in range(150, 200, 10)] + [i for i in range(200, 250, 25)] + [250, 400]
+maxkareas = [i for i in range(11, 110)] + [i for i in range(115, 155, 5)] + [i for i in range(160, 210, 10)] + [i for i in range(225, 275, 25)] + [400, 3000]
+
+for minkarea, maxkarea in zip(minkareas, maxkareas):
+    url = 'https://www.cian.ru/cat.php?deal_type=sale&engine_version=2&maxkarea={maxkarea}&minkarea={minkarea}&object_type%5B0%5D=1&offer_type=flat&p={page}&region=1'.format(
+        maxkarea=maxkarea,
+        minkarea=minkarea,
+        page=1
+    )
+    url = url.replace('p=1', 'p={}')
+    print('parsing from', minkarea, 'to', maxkarea)
+    parser.parse(url)
+    print()
+    time.sleep(5)
+
+res = parser.parse_flat_info('https://www.cian.ru/sale/flat/194853439/')
+print(res)
 # parser.save_to_db(res)
