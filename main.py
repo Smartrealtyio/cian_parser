@@ -44,7 +44,7 @@ class CianParser():
     }
 
     def parse_flat_info(self, url):
-        page = requests.get(url, headers=self.headers, timeout=3).text
+        page = requests.get(url, headers=self.headers, timeout=10).text
         # print(page)
         # with open('page.html') as f:
         #     page = f.read()
@@ -106,7 +106,6 @@ class CianParser():
 
         # -------------------
         # Data transformation to correct type
-
         for metro, data in metros.items():
             metros.update({
                 metro: {
@@ -155,7 +154,8 @@ class CianParser():
 
         renovation = False
         if 'Ремонт' in general_info:
-            renovation = True
+            if general_info['Ремонт'] != 'Без ремонта':
+                renovation = True
 
         building_type_str = 'UNKNOWN'
         if 'Тип дома' in building_info:
@@ -248,14 +248,38 @@ class CianParser():
                 metro_ids.update({metro: metro_id})
             except:
                 print('metro', metro, 'does not exist')
+                # try:
+                #     metro_location = 'Москва,метро '+ metro
+                #     coords_response = requests.get(
+                #         f'https://geocode-maps.yandex.ru/1.x/?apikey={self.yand_api_token}&format=json&geocode={metro_location}', timeout=5).text
+                #     coords = \
+                #     json.loads(coords_response)['response']['GeoObjectCollection']['featureMember'][0]['GeoObject'][
+                #         'Point']['pos']
+                #     longitude, latitude = coords.split(' ')
+                #     longitude = float(longitude)
+                #     latitude = float(latitude)
+                #     cur.execute("""insert into metros (longitude, latitude, city_id, created_at, updated_at, metro_id, name)
+                #                    values (%s, %s, %s, %s, %s, %s)""", (
+                #         longitude,
+                #         latitude,
+                #         1,
+                #         datetime.now(),
+                #         datetime.now(),
+                #         2,
+                #         metro
+                #     ))
+                #     print('udated', metro)
+                # except:
+                print('fail in updating', metro)
                 continue
+
 
         cur.execute("select id from buildings where address=%s;", (flat['address'],))
         is_building_exist = cur.fetchone()
         if not is_building_exist:
             try:
                 coords_response = requests.get(
-                    f'https://geocode-maps.yandex.ru/1.x/?apikey={self.yand_api_token}&format=json&geocode={",".join(flat["address"])}').text
+                    f'https://geocode-maps.yandex.ru/1.x/?apikey={self.yand_api_token}&format=json&geocode={",".join(flat["address"])}', timeout=5).text
                 coords = \
                     json.loads(coords_response)['response']['GeoObjectCollection']['featureMember'][0]['GeoObject'][
                         'Point'][
@@ -327,6 +351,21 @@ class CianParser():
             flat_id = is_offer_exist[0]
             print('flat already exist', flat_id)
 
+            cur.execute("""update flats 
+                           set full_sq=%s, kitchen_sq=%s, life_sq=%s, floor=%s, is_apartment=%s, building_id=%s, updated_at=%s, closed=%s
+                           where id=%s""", (
+                flat['full_sq'],
+                flat['kitchen_sq'],
+                flat['life_sq'],
+                flat['floor'],
+                flat['is_apartment'],
+                building_id,
+                datetime.now(),
+                flat['closed'],
+                flat_id
+            ))
+            print('updated', flat_id)
+
         for price_info in flat['prices']:
             cur.execute('select * from prices where changed_date=%s', (price_info[0],))
             is_price_exist = cur.fetchone()
@@ -347,20 +386,27 @@ class CianParser():
 
 
     def get_flats_url(self, url):
-        response = requests.get(url, self.headers, timeout=3).text
+        response = requests.get(url, self.headers, timeout=10).text
         # print(response)
         soup = BeautifulSoup(response, 'lxml')
         pages_response = soup.find_all('a', {'class': 'c6e8ba5398--header--1fV2A'})
         pages_url = [page.get('href') for page in pages_response]
-
-        next_page_response = soup.find('ul', {'class': '_93444fe79c--list--HEGFW'}).find_all('li')
+        try:
+            next_page_response = soup.find('ul', {'class': '_93444fe79c--list--HEGFW'}).find_all('li')
+        except:
+            return pages_url, 0
         my_page = soup.find('li', {'class': '_93444fe79c--list-item--2KxXr _93444fe79c--list-item--active--3dOSi'})
-        if my_page == next_page_response[-1]:
+        try:
+            if my_page == next_page_response[-1]:
+                next_page_number = 0
+            else:
+                next_page_number = int(my_page.find('span').text) + 1
+
+        except:
             next_page_number = 0
-        else:
-            next_page_number = int(my_page.find('span').text) + 1
 
         return pages_url, next_page_number
+
 
     def parse(self, url):
         page_number = 1
@@ -381,6 +427,7 @@ class CianParser():
                 try:
                     result = self.parse_flat_info(flat_url)
                     print('parsed ok')
+                    print(result)
                     parsed_count += 1
                 except:
                     print('fail in parsing ', flat_url)
@@ -404,21 +451,21 @@ class CianParser():
 
 parser = CianParser()
 
-minkareas = [i for i in range(11, 110)] + [i for i in range(110, 150, 5)] + [i for i in range(150, 200, 10)] + [i for i in range(200, 250, 25)] + [250, 400]
-maxkareas = [i for i in range(11, 110)] + [i for i in range(115, 155, 5)] + [i for i in range(160, 210, 10)] + [i for i in range(225, 275, 25)] + [400, 3000]
+mintareas = [i for i in range(11, 110)] + [i for i in range(110, 150, 5)] + [i for i in range(150, 200, 10)] + [i for i in range(200, 250, 25)] + [250, 400]
+maxtareas = [i for i in range(11, 110)] + [i for i in range(115, 155, 5)] + [i for i in range(160, 210, 10)] + [i for i in range(225, 275, 25)] + [400, 3000]
 
-for minkarea, maxkarea in zip(minkareas, maxkareas):
-    url = 'https://www.cian.ru/cat.php?deal_type=sale&engine_version=2&maxkarea={maxkarea}&minkarea={minkarea}&object_type%5B0%5D=1&offer_type=flat&p={page}&region=1'.format(
-        maxkarea=maxkarea,
-        minkarea=minkarea,
+for mintarea, maxtarea in zip(mintareas, maxtareas):
+    url = 'https://www.cian.ru/cat.php?deal_type=sale&engine_version=2&maxtarea={maxtarea}&mintarea={mintarea}&object_type%5B0%5D=1&offer_type=flat&p={page}&region=1'.format(
+        maxtarea=maxtarea,
+        mintarea=mintarea,
         page=1
     )
     url = url.replace('p=1', 'p={}')
-    print('parsing from', minkarea, 'to', maxkarea)
+    print('parsing from', mintarea, 'to', maxtarea)
     parser.parse(url)
     print()
     time.sleep(5)
 
-res = parser.parse_flat_info('https://www.cian.ru/sale/flat/194853439/')
-print(res)
+# res = parser.parse_flat_info('https://www.cian.ru/sale/flat/194853439/')
+# print(res)
 # parser.save_to_db(res)
