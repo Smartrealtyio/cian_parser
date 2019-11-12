@@ -4,12 +4,63 @@ from datetime import datetime, timedelta
 from bs4 import BeautifulSoup
 import time
 import psycopg2
+import sys
 
+
+# orig_stdout = sys.stdout
+# f = open('out.txt', 'w')
+# sys.stdout = f
 
 class CianParser():
+    # s = requests.Session()
+    cookies = {
+        '__zzat140': 'MDA0dBA=Fz2+aQ==',
+        '_CIAN_GK': '483bd4e5-6bea-411d-9800-ac9e83c87362',
+        '_cmg_csst8yrRI': '1573547869',
+        '_comagic_id8yrRI': '2441688109.3876234738.1573547868',
+        '_fbp': 'fb.1.1572441633077.65162569',
+        '_ga': 'GA1.2.1234808825.1572441633',
+        '_gac_UA-30374201-1': '1.1573136630.Cj0KCQiAno_uBRC1ARIsAB496IWrbt90M4wtAwCfyslGBOxudlVV1qgt8SaHVTygiRqDRBK4T3edYcsaAufAEALw_wcB',
+        '_gcl_au': '1.1.1806903351.1573049913',
+        '_gcl_aw': 'GCL.1573136624.Cj0KCQiAno_uBRC1ARIsAB496IWrbt90M4wtAwCfyslGBOxudlVV1qgt8SaHVTygiRqDRBK4T3edYcsaAufAEALw_wcB',
+        '_gid': 'GA1.2.886469788.1573454980',
+        'afUserId': '21a3cc2b-19d9-44b2-a33c-66d07bf81faa',
+        'audience_serp_light': 'test',
+        'cfids140': 'Xl81jai19V8FNTMRNuk2Kul7ZMXnGEn7E9QiPPUD5Hsf82VdkrnHZvC69lkyaVg9GPLjN3NSwvXzUb3sRp3Ug8Zic3/rTfhvnBDsfleOq9LbU1tZ4c4f9IyfBiaJSUVI8Oc/v/38+0n32OzJR2SL74lcvzKRAJQwHiOuM6g=',
+        'cto_bundle': 'p0h7tl9YMkJPJTJCNGhaUmFNaUpqakFZaE1FWFVac1B5RVRIVVhKMHZwbXlKbjlrckt2QmZzZktGNEMlMkIzTWp0TkNJV1QzRE1yM2JEM2ZhV2NEbEpzenpHdGF6bGhJOE02N3NjbUhzd2ZYQTFlcUMlMkJEZlp4SmtlMiUyRjNnUUtsSlBqck5Famty',
+        'cto_lwid': '5359d483-12f9-4878-9733-3896d3e3c25c',
+        'financeMark': '6a02ecc3-b87b-4329-a321-9d5ba5c1ca07',
+        'finauth': 'fincian_fdd5161f-f1f8-433b-ac97-99f085b98122',
+        'fingerprint': '1f8a6e2448c844da7d17ed32daeffa7d',
+        'flocktory-uuid': '24e54e59-c3ef-4888-8e98-82d2a55e0aed-0',
+        'hide_onboarding': '1',
+        'incap_ses_378_2094920': 'Ha4BGY9VwTs+1Zzj0O0+BU9nyl0AAAAA214UC6PVlhRiQGB9kM8Alw==',
+        'login_mro_popup': 'meow',
+        'newobject_active': '1',
+        'newobject_all': '1',
+        'newobject_scount': '5',
+        'pview': '2',
+        'read_offers_compressed': 'EwBgnMwBxgbFBaYBGCAWKBWKInIOz7IDMsZSoW%2BmJQA',
+        'seen_pins_compressed': 'IwhME4BYDpOB2cTlIDT0gNgKzeqURFZAWhGAGZQL95MAGRp+4dbYcADmnEyA',
+        'serp_registration_trigger_popup': '1',
+        'serp_stalker_banner': '1',
+        'session_main_town_region_id': '1',
+        'session_region_id': '1',
+        'sopr_session': '27de0a2e72cc4d1e',
+        'sopr_utm': '%7B%22utm_source%22%3A+%22google%22%2C+%22utm_medium%22%3A+%22organic%22%7D',
+        'tildauid': '1572958412722.492619',
+        'tmr_detect': '0%7C1573550238782',
+        'uxfb_usertype': 'searcher',
+        'uxs_mig': '1',
+        'uxs_uid': '50a68880-00a0-11ea-b608-6b6bcae4d15c',
+        'visid_incap_2094920': 'NkfRtAOsT4q1F6MKN0pOYB+OuV0AAAAAQUIPAAAAAAAh4pjbgUZBRZHDmDI44qaj'
+    }
+    # s.headers = {
+    #     'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_5) AppleWebKit/603.3.8 (KHTML, like Gecko) Version/10.1.2 Safari/603.3.8'
+    # }
     yand_api_token = '31a6ed51-bc46-4d1d-9ac9-e3c2e22d2628'
     headers = {
-        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.9; rv:45.0) Gecko/20100101 Firefox/45.0'
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_5) AppleWebKit/603.3.8 (KHTML, like Gecko) Version/10.1.2 Safari/603.3.8'
     }
     street_names = {
         'ул.': 'улица',
@@ -44,18 +95,19 @@ class CianParser():
     }
 
     def parse_flat_info(self, url):
-        page = requests.get(url, headers=self.headers, timeout=10).text
+        # page = requests.get(url, headers=self.headers, cookies=self.cookies, timeout=10).text
+        # page = self.s.get(url, timeout=10).text
         # print(page)
         # with open('page.html') as f:
         #     page = f.read()
 
         # All responses
 
-        soup = BeautifulSoup(page, 'lxml')
+        # soup = BeautifulSoup(page, 'lxml')
+        soup = self.captcha_check(url)
 
         address = soup.find('div', {'class': 'a10a3f92e9--geo--18qoo'}).find('span').get('content').split(',')
         address = [i.strip() for i in address]
-
 
         rooms_info = soup.find('h1', {'class': 'a10a3f92e9--title--2Widg'}).text.split(',')[0].lower()
 
@@ -196,11 +248,14 @@ class CianParser():
         else:
             address = ', '.join(['Россия', address[0], address[1], street, house_number])
 
-
-        if rooms_info == 'студия' or rooms_info == 'апартаменты-студия':
-            rooms_count = -1
-        else:
+        try:
             rooms_count = int(''.join([i for i in rooms_info.split(' ')[0] if i.isdigit()]))
+        except ValueError:
+            rooms_count = -1
+        # if rooms_info == 'студия' or rooms_info == 'апартаменты-студия' or rooms_info == 'апартаменты свободной планировки':
+        #     rooms_count = -1
+        # else:
+        #     rooms_count = int(''.join([i for i in rooms_info.split(' ')[0] if i.isdigit()]))
 
         result = {
             'offer_id': offer_id,
@@ -258,14 +313,15 @@ class CianParser():
                 #     longitude, latitude = coords.split(' ')
                 #     longitude = float(longitude)
                 #     latitude = float(latitude)
+                #
                 #     cur.execute("""insert into metros (longitude, latitude, city_id, created_at, updated_at, metro_id, name)
-                #                    values (%s, %s, %s, %s, %s, %s)""", (
+                #                    values (%s, %s, %s, %s, %s, %s, %s)""", (
                 #         longitude,
                 #         latitude,
                 #         1,
                 #         datetime.now(),
                 #         datetime.now(),
-                #         2,
+                #         0,
                 #         metro
                 #     ))
                 #     print('udated', metro)
@@ -273,13 +329,13 @@ class CianParser():
                 print('fail in updating', metro)
                 continue
 
-
         cur.execute("select id from buildings where address=%s;", (flat['address'],))
         is_building_exist = cur.fetchone()
         if not is_building_exist:
             try:
                 coords_response = requests.get(
-                    f'https://geocode-maps.yandex.ru/1.x/?apikey={self.yand_api_token}&format=json&geocode={",".join(flat["address"])}', timeout=5).text
+                    f'https://geocode-maps.yandex.ru/1.x/?apikey={self.yand_api_token}&format=json&geocode={flat["address"]}',
+                    timeout=5).text
                 coords = \
                     json.loads(coords_response)['response']['GeoObjectCollection']['featureMember'][0]['GeoObject'][
                         'Point'][
@@ -331,8 +387,8 @@ class CianParser():
         is_offer_exist = cur.fetchone()
         if not is_offer_exist:
             cur.execute(
-                """insert into flats (full_sq, kitchen_sq, life_sq, floor, is_apartment, building_id, created_at, updated_at, offer_id, closed) 
-                   values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""", (
+                """insert into flats (full_sq, kitchen_sq, life_sq, floor, is_apartment, building_id, created_at, updated_at, offer_id, closed, rooms_total) 
+                   values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""", (
                     flat['full_sq'],
                     flat['kitchen_sq'],
                     flat['life_sq'],
@@ -342,7 +398,8 @@ class CianParser():
                     datetime.now(),
                     datetime.now(),
                     flat['offer_id'],
-                    flat['closed']
+                    flat['closed'],
+                    flat['rooms_count']
                 ))
             cur.execute('select id from flats where offer_id=%s;', (flat['offer_id'],))
             flat_id = cur.fetchone()[0]
@@ -352,7 +409,7 @@ class CianParser():
             print('flat already exist', flat_id)
 
             cur.execute("""update flats 
-                           set full_sq=%s, kitchen_sq=%s, life_sq=%s, floor=%s, is_apartment=%s, building_id=%s, updated_at=%s, closed=%s
+                           set full_sq=%s, kitchen_sq=%s, life_sq=%s, floor=%s, is_apartment=%s, building_id=%s, updated_at=%s, closed=%s, rooms_total=%s 
                            where id=%s""", (
                 flat['full_sq'],
                 flat['kitchen_sq'],
@@ -362,6 +419,7 @@ class CianParser():
                 building_id,
                 datetime.now(),
                 flat['closed'],
+                flat['rooms_count'],
                 flat_id
             ))
             print('updated', flat_id)
@@ -384,11 +442,31 @@ class CianParser():
 
         return True
 
+    def captcha_check(self, url):
+        try:
+            response = requests.get(url, headers=self.headers, cookies=self.cookies, timeout=10)
+            soup = BeautifulSoup(response.text, 'lxml')
+            if soup.find('div', {'id': 'captcha'}):
+                print('captcha... sleeping 5 minutes')
+                time.sleep(5 * 60)
+                self.captcha_check(url)
+            else:
+                # self.cookies = response.cookies
+                # print(self.cookies)
+                return soup
+        except:
+            print('connection fail... sleeping 1 minute')
+            time.sleep(60)
+            self.captcha_check(url)
 
     def get_flats_url(self, url):
-        response = requests.get(url, self.headers, timeout=10).text
-        # print(response)
-        soup = BeautifulSoup(response, 'lxml')
+        # response = self.s.get(url, self.headers, timeout=10).text
+        # response = self.s.get(url, timeout=10).text
+        # with open('captcha.txt', 'w') as f:
+        #     f.write(response)
+        # # print(response)
+        # soup = BeautifulSoup(response, 'lxml')
+        soup = self.captcha_check(url)
         pages_response = soup.find_all('a', {'class': 'c6e8ba5398--header--1fV2A'})
         pages_url = [page.get('href') for page in pages_response]
         try:
@@ -407,8 +485,7 @@ class CianParser():
 
         return pages_url, next_page_number
 
-
-    def parse(self, url):
+    def parse(self, url, whole_parsed_count, whole_saved_count, whole_count):
         page_number = 1
         next_page_number = 1
         count = 0
@@ -429,6 +506,7 @@ class CianParser():
                     print('parsed ok')
                     print(result)
                     parsed_count += 1
+                    whole_parsed_count += 1
                 except:
                     print('fail in parsing ', flat_url)
                 if result:
@@ -436,36 +514,89 @@ class CianParser():
                     if self.save_to_db(result):
                         print('saved ok')
                         saved_count += 1
+                        whole_saved_count += 1
                     else:
                         print('fail in saving')
                     # except:
                     #     print('fail in saving', flat_url, result)
                 print()
                 count += 1
+                whole_count += 1
+                if whole_count%20 == 0:
+                    print('sleep')
+                    time.sleep(10)
                 time.sleep(3)
 
             print('end for page', count, 'parsed', parsed_count, 'saved', saved_count)
 
-        print('end', count, 'parsed', parsed_count, 'saved', saved_count)
+        print('the whole parsinf info', whole_count, 'parsed', whole_parsed_count, 'saved', whole_saved_count)
+        return whole_parsed_count, whole_saved_count, whole_count
+
+
+    def flat_closing_check(self):
+        print('start closing checking...')
+        conn = psycopg2.connect(host='localhost', dbname='yand_cian', user='cian_parser', password='DYqmyKe4')
+        cur = conn.cursor()
+        cur.execute("select offer_id from flats;")
+        offers = cur.fetchall()
+        for offer in offers:
+            try:
+                result = self.parse_flat_info("https://www.cian.ru/sale/flat/{}/".format(offer))
+                print('flat ok')
+            except:
+                cur.execute("update flats set closed=%s where offer_id=%s", (True, offer))
+                print('flat closed')
+            time.sleep(3)
 
 
 parser = CianParser()
 
-mintareas = [i for i in range(11, 110)] + [i for i in range(110, 150, 5)] + [i for i in range(150, 200, 10)] + [i for i in range(200, 250, 25)] + [250, 400]
-maxtareas = [i for i in range(11, 110)] + [i for i in range(115, 155, 5)] + [i for i in range(160, 210, 10)] + [i for i in range(225, 275, 25)] + [400, 3000]
+mintareas = [i for i in range(11, 110)] + [i for i in range(110, 150, 5)] + [i for i in range(150, 200, 10)] + [i for i
+                                                                                                                in
+                                                                                                                range(
+                                                                                                                    200,
+                                                                                                                    250,
+                                                                                                                    25)] + [
+                250, 400]
+maxtareas = [i for i in range(11, 110)] + [i for i in range(115, 155, 5)] + [i for i in range(160, 210, 10)] + [i for i
+                                                                                                                in
+                                                                                                                range(
+                                                                                                                    225,
+                                                                                                                    275,
+                                                                                                                    25)] + [
+                400, 3000]
+whole_parsed_count = 0
+whole_saved_count = 0
+whole_count = 0
 
-for mintarea, maxtarea in zip(mintareas, maxtareas):
-    url = 'https://www.cian.ru/cat.php?deal_type=sale&engine_version=2&maxtarea={maxtarea}&mintarea={mintarea}&object_type%5B0%5D=1&offer_type=flat&p={page}&region=1'.format(
-        maxtarea=maxtarea,
-        mintarea=mintarea,
-        page=1
-    )
-    url = url.replace('p=1', 'p={}')
-    print('parsing from', mintarea, 'to', maxtarea)
-    parser.parse(url)
-    print()
-    time.sleep(5)
+parser.flat_closing_check()
 
-# res = parser.parse_flat_info('https://www.cian.ru/sale/flat/194853439/')
+# for mintarea, maxtarea in zip(mintareas, maxtareas):
+#     url = 'https://www.cian.ru/cat.php?deal_type=sale&engine_version=2&maxtarea={maxtarea}&mintarea={mintarea}&object_type%5B0%5D=1&offer_type=flat&p={page}&region=1'.format(
+#         maxtarea=maxtarea,
+#         mintarea=mintarea,
+#         page=1
+#     )
+#     url = url.replace('p=1', 'p={}')
+#     print('parsing from', mintarea, 'to', maxtarea)
+#     whole_parsed_count, whole_saved_count, whole_count = parser.parse(url, whole_parsed_count, whole_saved_count,
+#                                                                       whole_count)
+#     print()
+#     time.sleep(5)
+
+# res = parser.parse_flat_info('https://www.cian.ru/sale/flat/220934355/')
 # print(res)
 # parser.save_to_db(res)
+
+# res = requests.get('https://www.cian.ru/kupit-kvartiru-1-komn-ili-2-komn/')
+# print(res.cookies.__dict__)
+# jar = requests.cookies.RequestsCookieJar()
+
+
+
+
+# res = parser.parse_flat_info('http://0s.o53xo.mnuwc3rooj2q.nblz.ru/sale/flat/220934355/')
+# print(res)
+# parser.save_to_db(res)
+# sys.stdout = orig_stdout
+# f.close()
