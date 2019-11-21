@@ -210,7 +210,7 @@ class CianParser():
                 longitude = float(longitude)
                 latitude = float(latitude)
             except IndexError:
-                logging.info('bad address for yandex-api ' + address)
+                logging.info(' bad address for yandex-api ' + address)
                 return False
 
             result = {
@@ -419,13 +419,13 @@ class CianParser():
             self.driver.get(url)
             soup = BeautifulSoup(self.driver.page_source, 'lxml')
             if soup.find('div', {'id': 'captcha'}):
-                logging.info('captcha... sleeping')
+                logging.info(' captcha... sleeping')
                 time.sleep(10)
                 self.captcha_check(url)
             else:
                 return soup
         except:
-            logging.info('connection fail... sleeping 10 seconds')
+            logging.info(' connection fail... sleeping 10 seconds')
             time.sleep(10)
             self.captcha_check(url)
 
@@ -460,24 +460,24 @@ class CianParser():
         while (page_number == next_page_number):
             time.sleep(2)
             res_url = url.format(page_number)
-            logging.info(str(res_url))
+            logging.info(' ' + str(res_url))
             page_number += 1
             new_urls, next_page_number = self.get_flats_url(res_url)
 
             # logging.info(*new_urls, sep='\n')
-            logging.info(str(len(new_urls)))
+            logging.info(' ' + str(len(new_urls)))
             for flat_url in new_urls:
                 result = None
                 # try:
                 result = self.parse_flat_info(flat_url)
                 if result:
-                    logging.info('parsed ok')
-                    logging.info(str(result))
+                    logging.info(' parsed ok')
+                    logging.info(' ' + str(result))
                     parsed_count += 1
                     whole_parsed_count += 1
                 # except:
                 else:
-                    logging.info('fail in parsing ' + str(flat_url))
+                    logging.info(' fail in parsing ' + str(flat_url))
                 if result:
                     # try:
                     response = requests.post('http://5.9.121.164:8086/api/save/', json=json.dumps(result)).content
@@ -497,9 +497,9 @@ class CianParser():
                     # time.sleep(30)
                 time.sleep(1)
 
-            logging.info('end for page' + str(count) + 'parsed' + str(parsed_count) + 'saved' + str(saved_count))
+            logging.info(' end for page ' + str(count) + ' parsed ' + str(parsed_count) + ' saved ' + str(saved_count))
+            logging.info(' the whole parsing info ' + str(whole_count) + ' parsed ' + str(whole_parsed_count) + ' saved ' + str(whole_saved_count))
 
-        logging.info('the whole parsing info' + str(whole_count) + 'parsed' + str(whole_parsed_count) + 'saved' + str(whole_saved_count))
         return whole_parsed_count, whole_saved_count, whole_count
 
     # def flat_closing_check(self):
@@ -546,7 +546,7 @@ if __name__ == '__main__':
             page=1
         )
         url = url.replace('p=1', 'p={}')
-        logging.info('parsing from' + str(mintarea) + 'to' + str(maxtarea))
+        logging.info(' parsing from ' + str(mintarea) + ' to ' + str(maxtarea))
         whole_parsed_count, whole_saved_count, whole_count = parser.parse(url, whole_parsed_count, whole_saved_count,
                                                                           whole_count)
         logging.info('')
