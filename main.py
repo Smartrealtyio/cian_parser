@@ -478,15 +478,15 @@ class CianParser():
                 # except:
                 else:
                     logging.info(' fail in parsing ' + str(flat_url))
-                # if result:
-                #     # try:
-                #     response = requests.post('http://5.9.121.164:8086/api/save/', json=json.dumps(result)).content
-                #     if json.loads(response)['result']:
-                #         logging.info('saved ok')
-                #         saved_count += 1
-                #         whole_saved_count += 1
-                #     else:
-                #         logging.info('fail in saving')
+                if result:
+                    # try:
+                    response = requests.post('http://5.9.121.164:8086/api/save/', json=json.dumps(result)).content
+                    if json.loads(response)['result']:
+                        logging.info('saved ok')
+                        saved_count += 1
+                        whole_saved_count += 1
+                    else:
+                        logging.info('fail in saving')
                     # except:
                     #     print('fail in saving', flat_url, result)
                 logging.info('')
@@ -517,6 +517,18 @@ class CianParser():
     #             logging.info('flat closed')
     #         time.sleep(2)
 
+    def flats_closing_check(self):
+        response = requests.get('http://5.9.121.164:8086/api/save/').content
+        offers = json.loads(response)['result']
+        closed_offers = []
+        for offer in offers:
+            result = self.parse_flat_info('https://www.cian.ru/sale/flat/' + str(offer))
+            if not result:
+                closed_offers.append(str(offer))
+
+        response = requests.post('http://5.9.121.164:8086/api/closing/', json=json.dumps(closed_offers))
+
+        return
 
 if __name__ == '__main__':
     parser = CianParser()
