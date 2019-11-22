@@ -534,36 +534,50 @@ class CianParser():
 if __name__ == '__main__':
     parser = CianParser()
 
-    mintareas = [i for i in range(11, 110)] + [i for i in range(110, 150, 5)] + [i for i in range(150, 200, 10)] + [i for i
-                                                                                                                    in
-                                                                                                                    range(
-                                                                                                                        200,
-                                                                                                                        250,
-                                                                                                                        25)] + [
-                    250, 400]
-    maxtareas = [i for i in range(11, 110)] + [i for i in range(115, 155, 5)] + [i for i in range(160, 210, 10)] + [i for i
-                                                                                                                    in
-                                                                                                                    range(
-                                                                                                                        225,
-                                                                                                                        275,
-                                                                                                                        25)] + [
-                    400, 3000]
-    whole_parsed_count = 0
-    whole_saved_count = 0
-    whole_count = 0
+    cycle = 0
 
-    for mintarea, maxtarea in zip(mintareas, maxtareas):
-        url = 'https://www.cian.ru/cat.php?deal_type=sale&engine_version=2&maxtarea={maxtarea}&mintarea={mintarea}&object_type%5B0%5D=1&offer_type=flat&p={page}&region=1'.format(
-            maxtarea=maxtarea,
-            mintarea=mintarea,
-            page=1
-        )
-        url = url.replace('p=1', 'p={}')
-        logging.info(' parsing from ' + str(mintarea) + ' to ' + str(maxtarea))
-        whole_parsed_count, whole_saved_count, whole_count = parser.parse(url, whole_parsed_count, whole_saved_count,
-                                                                          whole_count)
-        logging.info('')
-        time.sleep(10)
+    while True:
+
+        cycle += 1
+
+        if cycle%3 != 0:
+
+            mintareas = [i for i in range(11, 110)] + [i for i in range(110, 150, 5)] + [i for i in range(150, 200, 10)] + [i for i
+                                                                                                                            in
+                                                                                                                            range(
+                                                                                                                                200,
+                                                                                                                                250,
+                                                                                                                                25)] + [
+                            250, 400]
+            maxtareas = [i for i in range(11, 110)] + [i for i in range(115, 155, 5)] + [i for i in range(160, 210, 10)] + [i for i
+                                                                                                                            in
+                                                                                                                            range(
+                                                                                                                                225,
+                                                                                                                                275,
+                                                                                                                                25)] + [
+                            400, 3000]
+            whole_parsed_count = 0
+            whole_saved_count = 0
+            whole_count = 0
+
+            for mintarea, maxtarea in zip(mintareas, maxtareas):
+                url = 'https://www.cian.ru/cat.php?deal_type=sale&engine_version=2&maxtarea={maxtarea}&mintarea={mintarea}&object_type%5B0%5D=1&offer_type=flat&p={page}&region=1'.format(
+                    maxtarea=maxtarea,
+                    mintarea=mintarea,
+                    page=1
+                )
+                url = url.replace('p=1', 'p={}')
+                logging.info(' parsing from ' + str(mintarea) + ' to ' + str(maxtarea))
+                whole_parsed_count, whole_saved_count, whole_count = parser.parse(url, whole_parsed_count, whole_saved_count,
+                                                                                  whole_count)
+                logging.info('')
+                time.sleep(10)
+
+        else:
+
+            parser.flats_closing_check()
+
+
 
     parser.driver.close()
     parser.driver.quit()
