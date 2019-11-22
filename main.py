@@ -10,7 +10,7 @@ import logging
 logging.basicConfig(filename="parsing.log", level=logging.INFO)
 
 class CianParser():
-    driver = webdriver.Chrome(executable_path="/Users/egor/PycharmProjects/chromedriver")
+    driver = webdriver.Chrome(executable_path="/home/manzoni/CianParser/chromedriver")
     yand_api_token = '31a6ed51-bc46-4d1d-9ac9-e3c2e22d2628'
     street_names = {
         'ул.': 'улица',
@@ -480,7 +480,7 @@ class CianParser():
                     logging.info(' fail in parsing ' + str(flat_url))
                 if result:
                     try:
-                        response = requests.post('http://5.9.121.164:8086/api/save/', json=json.dumps(result), timeout=10).content
+                        response = requests.post('http://5.9.121.164:8085/api/save/', json=json.dumps(result), timeout=10).content
                         if json.loads(response)['result']:
                             logging.info('saved ok')
                             saved_count += 1
@@ -519,7 +519,7 @@ class CianParser():
     #         time.sleep(2)
 
     def flats_closing_check(self):
-        response = requests.get('http://5.9.121.164:8086/api/save/').content
+        response = requests.get('http://5.9.121.164:8085/api/save/').content
         offers = json.loads(response)['result']
         closed_offers = []
         for offer in offers:
@@ -527,20 +527,22 @@ class CianParser():
             if not result:
                 closed_offers.append(str(offer))
 
-        response = requests.post('http://5.9.121.164:8086/api/closing/', json=json.dumps(closed_offers))
+        response = requests.post('http://5.9.121.164:8085/api/closing/', json=json.dumps(closed_offers))
 
         return
 
 if __name__ == '__main__':
-    parser = CianParser()
+    # parser = CianParser()
 
     cycle = 0
 
     while True:
 
+        parser = CianParser()
+
         cycle += 1
 
-        if cycle%3 != 0:
+        if cycle%3 != -1:
 
             mintareas = [i for i in range(11, 110)] + [i for i in range(110, 150, 5)] + [i for i in range(150, 200, 10)] + [i for i
                                                                                                                             in
@@ -579,6 +581,6 @@ if __name__ == '__main__':
 
 
 
-    parser.driver.close()
-    parser.driver.quit()
+        parser.driver.close()
+        parser.driver.quit()
 
