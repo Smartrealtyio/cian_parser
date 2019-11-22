@@ -479,16 +479,17 @@ class CianParser():
                 else:
                     logging.info(' fail in parsing ' + str(flat_url))
                 if result:
-                    # try:
-                    response = requests.post('http://5.9.121.164:8086/api/save/', json=json.dumps(result)).content
-                    if json.loads(response)['result']:
-                        logging.info('saved ok')
-                        saved_count += 1
-                        whole_saved_count += 1
-                    else:
-                        logging.info('fail in saving')
-                    # except:
-                    #     print('fail in saving', flat_url, result)
+                    try:
+                        response = requests.post('http://5.9.121.164:8086/api/save/', json=json.dumps(result), timeout=10).content
+                        if json.loads(response)['result']:
+                            logging.info('saved ok')
+                            saved_count += 1
+                            whole_saved_count += 1
+                        else:
+                            logging.info('fail in saving')
+                    except:
+                        logging.info(' fail in post query')
+                        time.sleep(10)
                 logging.info('')
                 count += 1
                 whole_count += 1
