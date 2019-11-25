@@ -519,13 +519,15 @@ class CianParser():
     #         time.sleep(2)
 
     def flats_closing_check(self):
-        response = requests.get('http://5.9.121.164:8085/api/save/').content
-        offers = json.loads(response)['result']
+        response = requests.get('http://5.9.121.164:8085/api/flats/').content
+        offers = json.loads(response)['result'][:3]
+
         closed_offers = []
         for offer in offers:
-            result = self.parse_flat_info('https://www.cian.ru/sale/flat/' + str(offer))
+            result = self.parse_flat_info('https://www.cian.ru/sale/flat/' + str(offer[0]))
             if not result:
-                closed_offers.append(str(offer))
+                closed_offers.append(str(offer[0]))
+
 
         response = requests.post('http://5.9.121.164:8085/api/closing/', json=json.dumps(closed_offers))
 
@@ -534,13 +536,11 @@ class CianParser():
 if __name__ == '__main__':
     # parser = CianParser()
 
+    parser = CianParser()
+    # parser.flats_closing_check()
     cycle = 0
 
     while True:
-
-        parser = CianParser()
-
-        cycle += 1
 
         if cycle%3 != -1:
 
@@ -580,7 +580,7 @@ if __name__ == '__main__':
             parser.flats_closing_check()
 
 
+        print('All flats parsed')
+        time.sleep(60)
 
-        parser.driver.close()
-        parser.driver.quit()
 
