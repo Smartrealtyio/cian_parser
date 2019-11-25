@@ -545,6 +545,8 @@ if __name__ == '__main__':
 
     while True:
 
+        cycle += 1
+
         if cycle%3 != 0:
 
             mintareas = [i for i in range(11, 110)] + [i for i in range(110, 150, 5)] + [i for i in range(150, 200, 10)] + [i for i
