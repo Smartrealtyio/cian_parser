@@ -525,11 +525,14 @@ class CianParser():
         closed_offers = []
         for offer in offers:
             result = self.parse_flat_info('https://www.cian.ru/sale/flat/' + str(offer[0]))
+            closed_offers.append(str(offer[0]))
             if not result:
                 closed_offers.append(str(offer[0]))
 
 
         response = requests.post('http://5.9.121.164:8085/api/closing/', json=json.dumps(closed_offers))
+
+        # print(response)
 
         return
 
@@ -542,7 +545,7 @@ if __name__ == '__main__':
 
     while True:
 
-        if cycle%3 != -1:
+        if cycle%3 != 0:
 
             mintareas = [i for i in range(11, 110)] + [i for i in range(110, 150, 5)] + [i for i in range(150, 200, 10)] + [i for i
                                                                                                                             in
