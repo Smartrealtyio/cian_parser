@@ -9,6 +9,7 @@ import logging
 
 logging.basicConfig(filename="parsing.log", level=logging.INFO)
 
+
 class CianParser():
     driver = webdriver.Chrome(executable_path="/home/manzoni/CianParser/chromedriver")
     yand_api_token = '31a6ed51-bc46-4d1d-9ac9-e3c2e22d2628'
@@ -182,7 +183,8 @@ class CianParser():
                     hours = int(date[-1].split(':')[0])
                     minutes = int(date[-1].split(':')[1])
                     prices.append(
-                        [str(datetime(datetime.now().year, month, day, hours, minutes)), int(''.join(price.split()[:-1]))])
+                        [str(datetime(datetime.now().year, month, day, hours, minutes)),
+                         int(''.join(price.split()[:-1]))])
                 else:
                     year = int(time)
                     prices.append([str(datetime(year, month, day)), int(''.join(price.split()[:-1]))])
@@ -431,8 +433,11 @@ class CianParser():
 
     def get_flats_url(self, url):
         soup = self.captcha_check(url)
-        pages_response = soup.find_all('a', {'class': 'c6e8ba5398--header--1fV2A'})
-        pages_url = [page.get('href') for page in pages_response]
+        try:
+            pages_response = soup.find_all('a', {'class': 'c6e8ba5398--header--1fV2A'})
+            pages_url = [page.get('href') for page in pages_response]
+        except:
+            pages_url = []
         try:
             next_page_response = soup.find('ul', {'class': '_93444fe79c--list--HEGFW'}).find_all('li')
         except:
@@ -480,7 +485,8 @@ class CianParser():
                     logging.info(' fail in parsing ' + str(flat_url))
                 if result:
                     try:
-                        response = requests.post('http://5.9.121.164:8085/api/save/', json=json.dumps(result), timeout=10).content
+                        response = requests.post('http://5.9.121.164:8085/api/save/', json=json.dumps(result),
+                                                 timeout=10).content
                         if json.loads(response)['result']:
                             logging.info('saved ok')
                             saved_count += 1
@@ -495,11 +501,13 @@ class CianParser():
                 whole_count += 1
                 # if whole_count % 20 == 0:
                 #     print('sleep')
-                    # time.sleep(30)
+                # time.sleep(30)
                 time.sleep(1)
 
             logging.info(' end for page ' + str(count) + ' parsed ' + str(parsed_count) + ' saved ' + str(saved_count))
-            logging.info(' the whole parsing info ' + str(whole_count) + ' parsed ' + str(whole_parsed_count) + ' saved ' + str(whole_saved_count))
+            logging.info(
+                ' the whole parsing info ' + str(whole_count) + ' parsed ' + str(whole_parsed_count) + ' saved ' + str(
+                    whole_saved_count))
 
         return whole_parsed_count, whole_saved_count, whole_count
 
@@ -529,39 +537,41 @@ class CianParser():
             if not result:
                 closed_offers.append(str(offer[0]))
 
-
         response = requests.post('http://5.9.121.164:8085/api/closing/', json=json.dumps(closed_offers))
 
         # print(response)
 
         return
 
+
 if __name__ == '__main__':
     # parser = CianParser()
 
     parser = CianParser()
     # parser.flats_closing_check()
-    cycle = 0
+    cycle = 1
 
     while True:
 
         cycle += 1
 
-        if cycle%3 != 0:
+        if cycle % 3 != 0:
 
-            mintareas = [i for i in range(11, 110)] + [i for i in range(110, 150, 5)] + [i for i in range(150, 200, 10)] + [i for i
-                                                                                                                            in
-                                                                                                                            range(
-                                                                                                                                200,
-                                                                                                                                250,
-                                                                                                                                25)] + [
+            mintareas = [i for i in range(11, 110)] + [i for i in range(110, 150, 5)] + [i for i in
+                                                                                         range(150, 200, 10)] + [i for i
+                                                                                                                 in
+                                                                                                                 range(
+                                                                                                                     200,
+                                                                                                                     250,
+                                                                                                                     25)] + [
                             250, 400]
-            maxtareas = [i for i in range(11, 110)] + [i for i in range(115, 155, 5)] + [i for i in range(160, 210, 10)] + [i for i
-                                                                                                                            in
-                                                                                                                            range(
-                                                                                                                                225,
-                                                                                                                                275,
-                                                                                                                                25)] + [
+            maxtareas = [i for i in range(11, 110)] + [i for i in range(115, 155, 5)] + [i for i in
+                                                                                         range(160, 210, 10)] + [i for i
+                                                                                                                 in
+                                                                                                                 range(
+                                                                                                                     225,
+                                                                                                                     275,
+                                                                                                                     25)] + [
                             400, 3000]
             whole_parsed_count = 0
             whole_saved_count = 0
@@ -575,7 +585,8 @@ if __name__ == '__main__':
                 )
                 url = url.replace('p=1', 'p={}')
                 logging.info(' parsing from ' + str(mintarea) + ' to ' + str(maxtarea))
-                whole_parsed_count, whole_saved_count, whole_count = parser.parse(url, whole_parsed_count, whole_saved_count,
+                whole_parsed_count, whole_saved_count, whole_count = parser.parse(url, whole_parsed_count,
+                                                                                  whole_saved_count,
                                                                                   whole_count)
                 logging.info('')
                 time.sleep(10)
@@ -584,8 +595,5 @@ if __name__ == '__main__':
 
             parser.flats_closing_check()
 
-
         print('All flats parsed')
         time.sleep(60)
-
-
