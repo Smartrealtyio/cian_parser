@@ -534,7 +534,7 @@ class CianParser():
         for offer in offers:
             time.sleep(1)
             result = self.parse_flat_info('https://www.cian.ru/sale/flat/' + str(offer[0]))
-            closed_offers.append(str(offer[0]))
+            # closed_offers.append(str(offer[0]))
             if not result:
                 logging.info(' CLOSED')
                 closed_offers.append(str(offer[0]))
