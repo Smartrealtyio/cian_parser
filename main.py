@@ -537,7 +537,7 @@ class CianParser():
             # closed_offers.append(str(offer[0]))
             if not result:
                 logging.info(' CLOSED')
-                response = requests.post('http://5.9.121.164:8085/api/closing/', json=json.dumps(str(offer[0]))).content
+                response = requests.post('http://5.9.121.164:8085/api/closing/', json=json.dumps([str(offer[0])])).content
                 logging.info(' ' + str(json.loads(response)['result']))
                 # closed_offers.append(str(offer[0]))
             else:
