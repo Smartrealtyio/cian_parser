@@ -528,7 +528,7 @@ class CianParser():
 
     def flats_closing_check(self):
         response = requests.get('http://5.9.121.164:8085/api/flats/').content
-        offers = json.loads(response)['result'][:3]
+        offers = json.loads(response)['result']
 
         closed_offers = []
         for offer in offers:
