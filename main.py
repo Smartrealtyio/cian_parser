@@ -530,18 +530,20 @@ class CianParser():
         response = requests.get('http://5.9.121.164:8085/api/flats/').content
         offers = json.loads(response)['result']
 
-        closed_offers = []
+        # closed_offers = []
         for offer in offers:
             time.sleep(1)
             result = self.parse_flat_info('https://www.cian.ru/sale/flat/' + str(offer[0]))
             # closed_offers.append(str(offer[0]))
             if not result:
                 logging.info(' CLOSED')
-                closed_offers.append(str(offer[0]))
+                response = requests.post('http://5.9.121.164:8085/api/closing/', json=json.dumps(str(offer[0]))).content
+                logging.info(' ' + str(json.loads(response)['result']))
+                # closed_offers.append(str(offer[0]))
             else:
                 logging.info(' opened')
 
-        response = requests.post('http://5.9.121.164:8085/api/closing/', json=json.dumps(closed_offers))
+        # response = requests.post('http://5.9.121.164:8085/api/closing/', json=json.dumps(closed_offers))
 
         # print(response)
 
