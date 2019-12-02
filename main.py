@@ -427,8 +427,9 @@ class CianParser():
             else:
                 return soup
         except:
-            logging.info(' connection fail... sleeping 10 seconds')
-            time.sleep(10)
+            self.driver.get('')
+            logging.info(' connection fail... sleeping 20 seconds')
+            time.sleep(20)
             self.captcha_check(url)
 
     def get_flats_url(self, url):
@@ -555,7 +556,7 @@ if __name__ == '__main__':
 
     parser = CianParser()
     # parser.flats_closing_check()
-    cycle = 2
+    cycle = 0
 
     while True:
 
