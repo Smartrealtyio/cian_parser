@@ -427,7 +427,7 @@ class CianParser():
             else:
                 return soup
         except:
-            self.driver.get('')
+            self.driver.get('https://www.google.com')
             logging.info(' connection fail... sleeping 20 seconds')
             time.sleep(20)
             self.captcha_check(url)
