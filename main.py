@@ -360,7 +360,7 @@ class CianParser():
                 count += 1
                 whole_count += 1
 
-                time.sleep(1)
+                # time.sleep(1)
 
             logging.info(' end for page ' + str(count) + ' parsed ' + str(parsed_count) + ' saved ' + str(saved_count))
             logging.info(
