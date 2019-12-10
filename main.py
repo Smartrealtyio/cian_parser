@@ -5,13 +5,17 @@ from bs4 import BeautifulSoup
 import psycopg2
 import time
 from selenium import webdriver
+from selenium.common.exceptions import TimeoutException
 import logging
+import sys
+import os
 
 logging.basicConfig(filename="parsing.log", level=logging.INFO)
 
 
 class CianParser():
-    driver = webdriver.Chrome(executable_path="/home/manzoni/CianParser/chromedriver")
+    # driver = webdriver.Chrome(executable_path="/home/manzoni/CianParser/chromedriver")
+    driver = webdriver.Chrome(executable_path="/Users/egor/PycharmProjects/chromedriver")
     yand_api_token = '31a6ed51-bc46-4d1d-9ac9-e3c2e22d2628'
     street_names = {
         'ул.': 'улица',
@@ -97,6 +101,17 @@ class CianParser():
                     info.find('td', {'class': 'price_history_widget-event-date-At3o0vWR'}).text:
                         info.find('td', {'class': 'price_history_widget-event-price-1hxoWz1dS'}).text
                 })
+
+            logging.info(' waiting ')
+
+            self.driver.find_element_by_class_name('a10a3f92e9--container--1wUf1').click()
+            import time
+            time.sleep(1)
+
+            soup = BeautifulSoup(self.driver.page_source, 'lxml')
+            date = soup.find('div', {'class': 'a10a3f92e9--information--AyP9e'}).find('div')
+
+            logging.info(' DATE ' + str(date))
 
             # update_time = soup.find('div', {'class': 'a10a3f92e9--container--3nJ0d'}).text
 
@@ -243,178 +258,10 @@ class CianParser():
         except:
             return False
 
-    # def save_to_db(self, flat):
-    #     try:
-    #         conn = psycopg2.connect(host='localhost', dbname='yand', user='cian', password='DYqmyKe4')
-    #         cur = conn.cursor()
-    #     except:
-    #         return False
-    #
-    #     cur.execute("select id from districts where name=%s;", (flat['district'],))
-    #     try:
-    #         district_id = cur.fetchone()[0]
-    #     except:
-    #         logging.info('district does not exist')
-    #         conn.close()
-    #         return False
-    #     logging.info('district_id' + str(district_id))
-    #
-    #     metro_ids = {}
-    #     for metro in flat['metros']:
-    #         try:
-    #             cur.execute("select id from metros where name=%s;", (metro,))
-    #             metro_id = cur.fetchone()[0]
-    #             metro_ids.update({metro: metro_id})
-    #         except:
-    #             logging.info('metro' + str(metro) + 'does not exist')
-    #             # try:
-    #             #     metro_location = 'Москва,метро '+ metro
-    #             #     coords_response = requests.get(
-    #             #         f'https://geocode-maps.yandex.ru/1.x/?apikey={self.yand_api_token}&format=json&geocode={metro_location}', timeout=5).text
-    #             #     coords = \
-    #             #     json.loads(coords_response)['response']['GeoObjectCollection']['featureMember'][0]['GeoObject'][
-    #             #         'Point']['pos']
-    #             #     longitude, latitude = coords.split(' ')
-    #             #     longitude = float(longitude)
-    #             #     latitude = float(latitude)
-    #             #
-    #             #     cur.execute("""insert into metros (longitude, latitude, city_id, created_at, updated_at, metro_id, name)
-    #             #                    values (%s, %s, %s, %s, %s, %s, %s)""", (
-    #             #         longitude,
-    #             #         latitude,
-    #             #         1,
-    #             #         datetime.now(),
-    #             #         datetime.now(),
-    #             #         0,
-    #             #         metro
-    #             #     ))
-    #             #     print('udated', metro)
-    #             # except:
-    #             logging.info('fail in updating' + str(metro))
-    #             continue
-    #
-    #     try:
-    #         coords_response = requests.get(
-    #             f'https://geocode-maps.yandex.ru/1.x/?apikey={self.yand_api_token}&format=json&geocode={flat["address"]}',
-    #             timeout=5).text
-    #         coords = \
-    #             json.loads(coords_response)['response']['GeoObjectCollection']['featureMember'][0]['GeoObject'][
-    #                 'Point'][
-    #                 'pos']
-    #         longitude, latitude = coords.split(' ')
-    #         longitude = float(longitude)
-    #         latitude = float(latitude)
-    #     except IndexError:
-    #         logging.info('bad address for yandex-api' + flat['address'])
-    #         conn.close()
-    #         return False
-    #
-    #     cur.execute("select id from buildings where address=%s or longitude=%s and latitude=%s;",
-    #                 (flat['address'], longitude, latitude))
-    #     is_building_exist = cur.fetchone()
-    #     if not is_building_exist:
-    #
-    #         cur.execute(
-    #             """insert into buildings
-    #                (max_floor, building_type_str, built_year, flats_count, address, renovation,
-    #                 has_elevator, longitude, latitude, district_id, created_at, updated_at)
-    #                values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);""", (
-    #                 flat['max_floor'],
-    #                 flat['building_type_str'],
-    #                 flat['built_year'],
-    #                 flat['flats_count'],
-    #                 flat['address'],
-    #                 flat['renovation'],
-    #                 flat['has_elevator'],
-    #                 longitude,
-    #                 latitude,
-    #                 district_id,
-    #                 datetime.now(),
-    #                 datetime.now()
-    #             ))
-    #         cur.execute("select id from buildings where address=%s;", (flat['address'],))
-    #         building_id = cur.fetchone()[0]
-    #         logging.info('building_id' + str(building_id))
-    #         for metro, metro_id in metro_ids.items():
-    #             try:
-    #                 cur.execute(
-    #                     """insert into time_metro_buildings (building_id, metro_id, time_to_metro, transport_type, created_at, updated_at)
-    #                        values (%s, %s, %s, %s, %s, %s);""", (
-    #                         building_id,
-    #                         metro_id,
-    #                         flat['metros'][metro]['time_to_metro'],
-    #                         flat['metros'][metro]['transport_type'],
-    #                         datetime.now(),
-    #                         datetime.now()
-    #                     ))
-    #             except:
-    #                 logging.info('some new error')
-    #                 conn.close()
-    #                 return False
-    #     else:
-    #         building_id = is_building_exist[0]
-    #         logging.info('building already exist' + str(building_id))
-    #
-    #     cur.execute('select * from flats where offer_id=%s', (flat['offer_id'],))
-    #     is_offer_exist = cur.fetchone()
-    #     if not is_offer_exist:
-    #         cur.execute(
-    #             """insert into flats (full_sq, kitchen_sq, life_sq, floor, is_apartment, building_id, created_at, updated_at, offer_id, closed, rooms_total, image)
-    #                values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""", (
-    #                 flat['full_sq'],
-    #                 flat['kitchen_sq'],
-    #                 flat['life_sq'],
-    #                 flat['floor'],
-    #                 flat['is_apartment'],
-    #                 building_id,
-    #                 datetime.now(),
-    #                 datetime.now(),
-    #                 flat['offer_id'],
-    #                 flat['closed'],
-    #                 flat['rooms_count'],
-    #                 flat['image']
-    #             ))
-    #         cur.execute('select id from flats where offer_id=%s;', (flat['offer_id'],))
-    #         flat_id = cur.fetchone()[0]
-    #         logging.info('flat_id' + str(flat_id))
-    #     else:
-    #         flat_id = is_offer_exist[0]
-    #         logging.info('flat already exist' + str(flat_id))
-    #
-    #         cur.execute("""update flats
-    #                        set full_sq=%s, kitchen_sq=%s, life_sq=%s, floor=%s, is_apartment=%s, building_id=%s, updated_at=%s, closed=%s, rooms_total=%s, image=%s
-    #                        where id=%s""", (
-    #             flat['full_sq'],
-    #             flat['kitchen_sq'],
-    #             flat['life_sq'],
-    #             flat['floor'],
-    #             flat['is_apartment'],
-    #             building_id,
-    #             datetime.now(),
-    #             flat['closed'],
-    #             flat['rooms_count'],
-    #             flat['image'],
-    #             flat_id
-    #         ))
-    #         logging.info('updated' + str(flat_id))
-    #
-    #     for price_info in flat['prices']:
-    #         cur.execute('select * from prices where changed_date=%s', (price_info[0],))
-    #         is_price_exist = cur.fetchone()
-    #         if not is_price_exist:
-    #             cur.execute("""insert into prices (price, changed_date, flat_id, created_at, updated_at)
-    #                            values (%s, %s, %s, %s, %s);""", (
-    #                 price_info[1],
-    #                 price_info[0],
-    #                 flat_id,
-    #                 datetime.now(),
-    #                 datetime.now()
-    #             ))
-    #
-    #     conn.commit()
-    #     cur.close()
-    #
-    #     return True
+
+    def restart(self):
+        python = sys.executable
+        os.execl(python, python, *sys.argv)
 
     def captcha_check(self, url):
         try:
@@ -426,11 +273,17 @@ class CianParser():
                 self.captcha_check(url)
             else:
                 return soup
-        except:
-            self.driver.get('https://www.google.com')
-            logging.info(' connection fail... sleeping 20 seconds')
+        except TimeoutException:
+            logging.info(' connection fail... RESTARTING APP')
             time.sleep(20)
-            self.captcha_check(url)
+
+            self.restart()
+
+        except:
+            logging.info(' connection fail... RESTARTING APP')
+            time.sleep(20)
+
+            self.restart()
 
     def get_flats_url(self, url):
         soup = self.captcha_check(url)
@@ -470,7 +323,6 @@ class CianParser():
             page_number += 1
             new_urls, next_page_number = self.get_flats_url(res_url)
 
-            # logging.info(*new_urls, sep='\n')
             logging.info(' ' + str(len(new_urls)))
             for flat_url in new_urls:
                 result = None
@@ -486,23 +338,22 @@ class CianParser():
                     logging.info(' fail in parsing ' + str(flat_url))
                 if result:
                     try:
-                        response = requests.post('http://5.9.121.164:8085/api/save/', json=json.dumps(result),
-                                                 timeout=10).content
-                        if json.loads(response)['result']:
-                            logging.info('saved ok')
-                            saved_count += 1
-                            whole_saved_count += 1
-                        else:
-                            logging.info('fail in saving')
+                        logging.info(str(result))
+                        # response = requests.post('http://5.9.121.164:8085/api/save/', json=json.dumps(result),
+                        #                          timeout=10).content
+                        # if json.loads(response)['result']:
+                        #     logging.info(' saved ok')
+                        #     saved_count += 1
+                        #     whole_saved_count += 1
+                        # else:
+                        #     logging.info(' fail in saving')
                     except:
                         logging.info(' fail in post query')
                         time.sleep(10)
                 logging.info('')
                 count += 1
                 whole_count += 1
-                # if whole_count % 20 == 0:
-                #     print('sleep')
-                # time.sleep(30)
+
                 time.sleep(1)
 
             logging.info(' end for page ' + str(count) + ' parsed ' + str(parsed_count) + ' saved ' + str(saved_count))
@@ -512,59 +363,38 @@ class CianParser():
 
         return whole_parsed_count, whole_saved_count, whole_count
 
-    # def flat_closing_check(self):
-    #     logging.info('start closing checking...')
-    #     conn = psycopg2.connect(host='localhost', dbname='yand_cian', user='cian_parser', password='DYqmyKe4')
-    #     cur = conn.cursor()
-    #     cur.execute("select offer_id from flats;")
-    #     offers = cur.fetchall()
-    #     for offer in offers:
-    #         try:
-    #             result = self.parse_flat_info("https://www.cian.ru/sale/flat/{}/".format(offer))
-    #             logging.info('flat ok')
-    #         except:
-    #             cur.execute("update flats set closed=%s where offer_id=%s", (True, offer))
-    #             logging.info('flat closed')
-    #         time.sleep(2)
 
     def flats_closing_check(self):
         response = requests.get('http://5.9.121.164:8085/api/flats/').content
         offers = json.loads(response)['result']
 
-        # closed_offers = []
         for offer in offers:
             time.sleep(1)
             result = self.parse_flat_info('https://www.cian.ru/sale/flat/' + str(offer[0]))
-            # closed_offers.append(str(offer[0]))
             if not result:
                 logging.info(' CLOSED')
-                response = requests.post('http://5.9.121.164:8085/api/closing/', json=json.dumps([str(offer[0])])).content
+                response = requests.post('http://5.9.121.164:8085/api/closing/',
+                                         json=json.dumps([str(offer[0])])).content
                 logging.info(' ' + str(json.loads(response)['result']))
-                # closed_offers.append(str(offer[0]))
             else:
                 logging.info(' opened')
-
-        # response = requests.post('http://5.9.121.164:8085/api/closing/', json=json.dumps(closed_offers))
-
-        # print(response)
 
         return
 
 
 if __name__ == '__main__':
-    # parser = CianParser()
 
     parser = CianParser()
-    # parser.flats_closing_check()
+
     cycle = 0
 
     while True:
 
         cycle += 1
 
-        if cycle % 3 != 0:
+        if cycle % 2 != 0:
 
-            mintareas = [i for i in range(11, 110)] + [i for i in range(110, 150, 5)] + [i for i in
+            mintareas = [i for i in range(12, 110)] + [i for i in range(110, 150, 5)] + [i for i in
                                                                                          range(150, 200, 10)] + [i for i
                                                                                                                  in
                                                                                                                  range(
@@ -572,7 +402,7 @@ if __name__ == '__main__':
                                                                                                                      250,
                                                                                                                      25)] + [
                             250, 400]
-            maxtareas = [i for i in range(11, 110)] + [i for i in range(115, 155, 5)] + [i for i in
+            maxtareas = [i for i in range(12, 110)] + [i for i in range(115, 155, 5)] + [i for i in
                                                                                          range(160, 210, 10)] + [i for i
                                                                                                                  in
                                                                                                                  range(
