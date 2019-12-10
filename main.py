@@ -14,8 +14,8 @@ logging.basicConfig(filename="parsing.log", level=logging.INFO)
 
 
 class CianParser():
-    # driver = webdriver.Chrome(executable_path="/home/manzoni/CianParser/chromedriver")
-    driver = webdriver.Chrome(executable_path="/Users/egor/PycharmProjects/chromedriver")
+    driver = webdriver.Chrome(executable_path="/home/manzoni/CianParser/chromedriver")
+    # driver = webdriver.Chrome(executable_path="/Users/egor/PycharmProjects/chromedriver")
     yand_api_token = '31a6ed51-bc46-4d1d-9ac9-e3c2e22d2628'
     street_names = {
         'ул.': 'улица',
