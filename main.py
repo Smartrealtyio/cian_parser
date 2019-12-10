@@ -109,9 +109,15 @@ class CianParser():
             time.sleep(1)
 
             soup = BeautifulSoup(self.driver.page_source, 'lxml')
-            date = soup.find('div', {'class': 'a10a3f92e9--information--AyP9e'}).find('div')
+            date = soup.find('div', {'class': 'a10a3f92e9--information--AyP9e'}).find('div').text.split(' ')[-1].strip()
 
-            logging.info(' DATE ' + str(date))
+            day = int(date.split('.')[0])
+            month = int(date.split('.')[1])
+            year = int(date.split('.')[2])
+
+            created_at = str(datetime(year, month, day))
+
+            logging.info(' DATE ' + created_at)
 
             # update_time = soup.find('div', {'class': 'a10a3f92e9--container--3nJ0d'}).text
 
@@ -251,7 +257,8 @@ class CianParser():
                 'prices': prices,
                 'metros': metros,
                 'longitude': longitude,
-                'latitude': latitude
+                'latitude': latitude,
+                'created_at': created_at
             }
 
             return result
@@ -338,15 +345,14 @@ class CianParser():
                     logging.info(' fail in parsing ' + str(flat_url))
                 if result:
                     try:
-                        logging.info(str(result))
-                        # response = requests.post('http://5.9.121.164:8085/api/save/', json=json.dumps(result),
-                        #                          timeout=10).content
-                        # if json.loads(response)['result']:
-                        #     logging.info(' saved ok')
-                        #     saved_count += 1
-                        #     whole_saved_count += 1
-                        # else:
-                        #     logging.info(' fail in saving')
+                        response = requests.post('http://5.9.121.164:8085/api/save/', json=json.dumps(result),
+                                                 timeout=10).content
+                        if json.loads(response)['result']:
+                            logging.info(' saved ok')
+                            saved_count += 1
+                            whole_saved_count += 1
+                        else:
+                            logging.info(' fail in saving')
                     except:
                         logging.info(' fail in post query')
                         time.sleep(10)
@@ -394,7 +400,7 @@ if __name__ == '__main__':
 
         if cycle % 2 != 0:
 
-            mintareas = [i for i in range(12, 110)] + [i for i in range(110, 150, 5)] + [i for i in
+            mintareas = [i for i in range(11, 110)] + [i for i in range(110, 150, 5)] + [i for i in
                                                                                          range(150, 200, 10)] + [i for i
                                                                                                                  in
                                                                                                                  range(
@@ -402,7 +408,7 @@ if __name__ == '__main__':
                                                                                                                      250,
                                                                                                                      25)] + [
                             250, 400]
-            maxtareas = [i for i in range(12, 110)] + [i for i in range(115, 155, 5)] + [i for i in
+            maxtareas = [i for i in range(11, 110)] + [i for i in range(115, 155, 5)] + [i for i in
                                                                                          range(160, 210, 10)] + [i for i
                                                                                                                  in
                                                                                                                  range(
