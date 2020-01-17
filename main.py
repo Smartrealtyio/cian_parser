@@ -10,6 +10,7 @@ import logging
 import sys
 import os
 import re
+import random
 
 logging.basicConfig(filename="parsing.log", level=logging.INFO)
 
@@ -399,7 +400,7 @@ if __name__ == '__main__':
 
     parser = CianParser()
 
-    cycle = 0
+    cycle = random.randint(0, 1)
 
     while True:
 
