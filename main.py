@@ -9,6 +9,7 @@ from selenium.common.exceptions import TimeoutException
 import logging
 import sys
 import os
+import re
 
 logging.basicConfig(filename="parsing.log", level=logging.INFO)
 
@@ -48,6 +49,7 @@ class CianParser():
         'Монолитно-кирпичный': 'MONOLIT_BRICK',
         'Блочный': 'BLOCK'
     }
+    flat_types = ['SECONDARY', 'NEW_FLAT']
 
     def parse_flat_info(self, url):
 
@@ -323,6 +325,7 @@ class CianParser():
         count = 0
         parsed_count = 0
         saved_count = 0
+        flat_type = int(re.findall(r'object_type%5B0%5D=(\d)', url)[0])
         while (page_number == next_page_number):
             time.sleep(2)
             res_url = url.format(page_number)
@@ -334,8 +337,10 @@ class CianParser():
             for flat_url in new_urls:
                 result = None
                 # try:
+                # logging.info(' INFO' + str(info))
                 result = self.parse_flat_info(flat_url)
                 if result:
+                    result['flat_type'] = self.flat_types[flat_type-1]
                     logging.info(' parsed ok')
                     logging.info(' ' + str(result))
                     parsed_count += 1
@@ -343,6 +348,8 @@ class CianParser():
                 # except:
                 else:
                     logging.info(' fail in parsing ' + str(flat_url))
+                    # info = re.findall(r'object_type%5B0%5D=(\d)', url)[0]
+                    # logging.info(' INFO' + str(info))
                 if result:
                     try:
                         response = requests.post('http://5.9.121.164:8085/api/save/', json=json.dumps(result),
@@ -421,17 +428,21 @@ if __name__ == '__main__':
             whole_count = 0
 
             for mintarea, maxtarea in zip(mintareas, maxtareas):
-                url = 'https://www.cian.ru/cat.php?deal_type=sale&engine_version=2&maxtarea={maxtarea}&mintarea={mintarea}&object_type%5B0%5D=1&offer_type=flat&p={page}&region=1'.format(
-                    maxtarea=maxtarea,
-                    mintarea=mintarea,
-                    page=1
-                )
-                url = url.replace('p=1', 'p={}')
-                logging.info(' parsing from ' + str(mintarea) + ' to ' + str(maxtarea))
-                whole_parsed_count, whole_saved_count, whole_count = parser.parse(url, whole_parsed_count,
-                                                                                  whole_saved_count,
-                                                                                  whole_count)
+                for i in range(1, 3):
+                    logging.info('type ' + str(i))
+                    url = 'https://www.cian.ru/cat.php?deal_type=sale&engine_version=2&maxtarea={maxtarea}&mintarea={mintarea}&object_type%5B0%5D={type}&offer_type=flat&p={page}&region=1'.format(
+                        maxtarea=maxtarea,
+                        mintarea=mintarea,
+                        type=i,
+                        page=1
+                    )
+                    url = url.replace('p=1', 'p={}')
+                    logging.info(' parsing from ' + str(mintarea) + ' to ' + str(maxtarea))
+                    whole_parsed_count, whole_saved_count, whole_count = parser.parse(url, whole_parsed_count,
+                                                                                      whole_saved_count,
+                                                                                      whole_count)
                 logging.info('')
+
                 time.sleep(10)
 
         else:
