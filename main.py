@@ -6,6 +6,7 @@ import psycopg2
 import time
 from selenium import webdriver
 from selenium.common.exceptions import TimeoutException
+from selenium.webdriver.chrome.options import Options
 import logging
 import sys
 import os
@@ -16,7 +17,11 @@ logging.basicConfig(filename="parsing.log", level=logging.INFO)
 
 
 class CianParser():
-    driver = webdriver.Chrome(executable_path="/home/manzoni/CianParser/chromedriver")
+    chrome_options = Options()
+    chrome_options.add_arguments('--headless')
+    chrome_options.add_arguments('--no-sandbox')
+    chrome_options.add_arguments('--disable-dev-shm-usage')
+    driver = webdriver.Chrome(executable_path="/home/manzoni/CianParser/chromedriver", chrome_options=chrome_options)
     # driver = webdriver.Chrome(executable_path="/Users/egor/PycharmProjects/chromedriver")
     yand_api_token = '31a6ed51-bc46-4d1d-9ac9-e3c2e22d2628'
     street_names = {
