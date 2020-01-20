@@ -445,10 +445,12 @@ if __name__ == '__main__':
                 logging.info('')
 
                 time.sleep(10)
+            print('All flats parsed')
 
         else:
 
             parser.flats_closing_check()
+            print('All flats checked')
 
-        print('All flats parsed')
+        print('next step')
         time.sleep(60)
