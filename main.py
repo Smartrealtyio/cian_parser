@@ -21,9 +21,10 @@ class CianParser():
     chrome_options.add_argument('--headless')
     chrome_options.add_argument('--no-sandbox')
     chrome_options.add_argument('--disable-dev-shm-usage')
-    driver = webdriver.Chrome(executable_path="/home/manzoni/CianParser/chromedriver", chrome_options=chrome_options)
-    # driver = webdriver.Chrome(executable_path="/Users/egor/PycharmProjects/chromedriver")
+    # driver = webdriver.Chrome(executable_path="/home/manzoni/CianParser/chromedriver", chrome_options=chrome_options)
+    driver = webdriver.Chrome(executable_path="/Users/egor/PycharmProjects/chromedriver")
     yand_api_token = '31a6ed51-bc46-4d1d-9ac9-e3c2e22d2628'
+    # yand_api_token = '1e083c60-3838-4701-bdae-e8629cf7575c'
     street_names = {
         'ул.': 'улица',
         'пер.': 'переулок',
@@ -57,6 +58,9 @@ class CianParser():
     }
     flat_types = ['SECONDARY', 'NEW_FLAT']
 
+    def str_prepare(self, s):
+        return s.replace('ё', 'е').replace('Ё', 'Е')
+
     def parse_flat_info(self, url):
 
         soup = self.captcha_check(url)
@@ -73,7 +77,7 @@ class CianParser():
             metros = {}
             for metro in metros_response:
                 metros.update({
-                    metro.find('a').text: metro.find('span').text
+                    self.str_prepare(metro.find('a').text): metro.find('span').text
                 })
 
             main_info_response = soup.find_all('div', {'class': 'a10a3f92e9--info--2ywQI'})
@@ -134,21 +138,60 @@ class CianParser():
             # -------------------
             # Data transformation to correct type
             for metro, data in metros.items():
+                metro_address = ''
+                try:
+                    metro_address = address[0] + ',метро ' + metro
+                    coords_response = requests.get(
+                        f'https://geocode-maps.yandex.ru/1.x/?apikey={self.yand_api_token}&format=json&geocode={metro_address}',
+                        timeout=5).text
+                    coords = \
+                        json.loads(coords_response)['response']['GeoObjectCollection']['featureMember'][0]['GeoObject'][
+                            'Point'][
+                            'pos']
+                    longitude, latitude = coords.split(' ')
+                    metro_longitude = float(longitude)
+                    metro_latitude = float(latitude)
+                except IndexError:
+                    logging.info(' bad address for yandex-api ' + metro_address)
+                    metro_longitude = 0
+                    metro_latitude = 0
                 metros.update({
                     metro: {
                         'time_to_metro': sum([int(i) if i.isdigit() else 0 for i in data.split(' ')]),
-                        'transport_type': 'ON_FOOT' * int('пешком' in data.split(' ')) or 'ON_TRANSPORT'
+                        'transport_type': 'ON_FOOT' * int('пешком' in data.split(' ')) or 'ON_TRANSPORT',
+                        'metro_longitude': metro_longitude,
+                        'metro_latitude': metro_latitude
                     }
                 })
 
             city = address[0]
-            district_pieces = address[-3].split(' ')
-            if district_pieces[0] in self.district_names:
-                district = " ".join(district_pieces[1:])
-            elif district_pieces[-1] in self.district_names:
-                district = " ".join(district_pieces[:-1])
-            else:
-                district = " ".join(district_pieces)
+            # district_pieces_msk = address[-3].split(' ')
+            # district_pieces_spb = address[2].split(' ')
+            # if district_pieces_msk[0] in self.district_names:
+            #     district = " ".join(district_pieces_msk[1:])
+            # elif district_pieces_spb[0] in self.district_names:
+            #     district = " ".join(district_pieces_spb[1:])
+            # elif district_pieces_msk[-1] in self.district_names:
+            #     district = " ".join(district_pieces_msk[:-1])
+            # elif district_pieces_spb[-1] in self.district_names:
+            #     district = " ".join(district_pieces_spb[:-1])
+            # else:
+            #     district = " ".join(district_pieces)
+            district = ''
+            for district_name in self.district_names:
+                for address_piece in address:
+                    if district_name in address_piece:
+                        if district_name in address_piece.split(' ')[0]:
+                            district = ' '.join(address_piece.split(' ')[1:])
+                        elif district_name in address_piece.split(' ')[-1]:
+                            district = ' '.join(address_piece.split(' ')[:-1])
+                        else:
+                            district = ' '.join(address_piece)
+                        break
+                if district:
+                    break
+
+            district = self.str_prepare(district)
 
             street = []
             for i in address[-2].split(' '):
@@ -219,10 +262,11 @@ class CianParser():
                     prices.append([str(datetime(year, month, day)), int(''.join(price.split()[:-1]))])
             prices.append(real_price)
 
-            if address[0] == 'Москва':
+            if address[0] == 'Москва' or address[0] == 'Санкт-Петербург':
                 address = ', '.join(['Россия', city, street, house_number])
             else:
                 address = ', '.join(['Россия', address[0], address[1], street, house_number])
+            address = self.str_prepare(address)
 
             try:
                 rooms_count = int(''.join([i for i in rooms_info.split(' ')[0] if i.isdigit()]))
@@ -243,6 +287,7 @@ class CianParser():
             except IndexError:
                 logging.info(' bad address for yandex-api ' + address)
                 return False
+
 
             result = {
                 'image': image,
@@ -332,6 +377,7 @@ class CianParser():
         parsed_count = 0
         saved_count = 0
         flat_type = int(re.findall(r'object_type%5B0%5D=(\d)', url)[0])
+        city_id = int(re.findall(r'region=(\d)', url)[0])
         while (page_number == next_page_number):
             time.sleep(2)
             res_url = url.format(page_number)
@@ -347,6 +393,7 @@ class CianParser():
                 result = self.parse_flat_info(flat_url)
                 if result:
                     result['flat_type'] = self.flat_types[flat_type-1]
+                    result['city_id'] = city_id
                     logging.info(' parsed ok')
                     logging.info(' ' + str(result))
                     parsed_count += 1
@@ -356,19 +403,19 @@ class CianParser():
                     logging.info(' fail in parsing ' + str(flat_url))
                     # info = re.findall(r'object_type%5B0%5D=(\d)', url)[0]
                     # logging.info(' INFO' + str(info))
-                if result:
-                    try:
-                        response = requests.post('http://5.9.121.164:8085/api/save/', json=json.dumps(result),
-                                                 timeout=10).content
-                        if json.loads(response)['result']:
-                            logging.info(' saved ok')
-                            saved_count += 1
-                            whole_saved_count += 1
-                        else:
-                            logging.info(' fail in saving')
-                    except:
-                        logging.info(' fail in post query')
-                        time.sleep(10)
+                # if result:
+                #     try:
+                #         response = requests.post('http://5.9.121.164:8085/api/save/', json=json.dumps(result),
+                #                                  timeout=10).content
+                #         if json.loads(response)['result']:
+                #             logging.info(' saved ok')
+                #             saved_count += 1
+                #             whole_saved_count += 1
+                #         else:
+                #             logging.info(' fail in saving')
+                #     except:
+                #         logging.info(' fail in post query')
+                #         time.sleep(10)
                 logging.info('')
                 count += 1
                 whole_count += 1
@@ -436,7 +483,9 @@ if __name__ == '__main__':
             for mintarea, maxtarea in zip(mintareas, maxtareas):
                 for i in range(1, 3):
                     logging.info('type ' + str(i))
-                    url = 'https://www.cian.ru/cat.php?deal_type=sale&engine_version=2&maxtarea={maxtarea}&mintarea={mintarea}&object_type%5B0%5D={type}&offer_type=flat&p={page}&region=1'.format(
+                    msk_url = 'https://www.cian.ru/cat.php?deal_type=sale&engine_version=2&maxtarea={maxtarea}&mintarea={mintarea}&object_type%5B0%5D={type}&offer_type=flat&p={page}&region=1'
+                    spb_url = 'https://www.cian.ru/cat.php?deal_type=sale&engine_version=2&maxtarea={maxtarea}&mintarea={mintarea}&object_type%5B0%5D={type}&offer_type=flat&p={page}&region=2'
+                    url = msk_url.format(
                         maxtarea=maxtarea,
                         mintarea=mintarea,
                         type=i,
