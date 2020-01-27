@@ -21,9 +21,9 @@ class CianParser():
     chrome_options.add_argument('--headless')
     chrome_options.add_argument('--no-sandbox')
     chrome_options.add_argument('--disable-dev-shm-usage')
-    # driver = webdriver.Chrome(executable_path="/home/manzoni/CianParser/chromedriver", chrome_options=chrome_options)
-    driver = webdriver.Chrome(executable_path="/Users/egor/PycharmProjects/chromedriver")
-    yand_api_token = '31a6ed51-bc46-4d1d-9ac9-e3c2e22d2628'
+    driver = webdriver.Chrome(executable_path="/home/manzoni/CianParser/chromedriver", chrome_options=chrome_options)
+    # driver = webdriver.Chrome(executable_path="/Users/egor/PycharmProjects/chromedriver")
+    # yand_api_token = '31a6ed51-bc46-4d1d-9ac9-e3c2e22d2628'
     # yand_api_token = '1e083c60-3838-4701-bdae-e8629cf7575c'
     street_names = {
         'ул.': 'улица',
@@ -142,7 +142,7 @@ class CianParser():
                 try:
                     metro_address = address[0] + ',метро ' + metro
                     coords_response = requests.get(
-                        f'https://geocode-maps.yandex.ru/1.x/?apikey={self.yand_api_token}&format=json&geocode={metro_address}',
+                        f'https://geocode-maps.yandex.ru/1.x/?apikey={yand_api_token}&format=json&geocode={metro_address}',
                         timeout=5).text
                     coords = \
                         json.loads(coords_response)['response']['GeoObjectCollection']['featureMember'][0]['GeoObject'][
@@ -275,7 +275,7 @@ class CianParser():
 
             try:
                 coords_response = requests.get(
-                    f'https://geocode-maps.yandex.ru/1.x/?apikey={self.yand_api_token}&format=json&geocode={address}',
+                    f'https://geocode-maps.yandex.ru/1.x/?apikey={yand_api_token}&format=json&geocode={address}',
                     timeout=5).text
                 coords = \
                     json.loads(coords_response)['response']['GeoObjectCollection']['featureMember'][0]['GeoObject'][
@@ -403,19 +403,19 @@ class CianParser():
                     logging.info(' fail in parsing ' + str(flat_url))
                     # info = re.findall(r'object_type%5B0%5D=(\d)', url)[0]
                     # logging.info(' INFO' + str(info))
-                # if result:
-                #     try:
-                #         response = requests.post('http://5.9.121.164:8085/api/save/', json=json.dumps(result),
-                #                                  timeout=10).content
-                #         if json.loads(response)['result']:
-                #             logging.info(' saved ok')
-                #             saved_count += 1
-                #             whole_saved_count += 1
-                #         else:
-                #             logging.info(' fail in saving')
-                #     except:
-                #         logging.info(' fail in post query')
-                #         time.sleep(10)
+                if result:
+                    try:
+                        response = requests.post('http://5.9.121.164:8085/api/save/', json=json.dumps(result),
+                                                 timeout=10).content
+                        if json.loads(response)['result']:
+                            logging.info(' saved ok')
+                            saved_count += 1
+                            whole_saved_count += 1
+                        else:
+                            logging.info(' fail in saving')
+                    except:
+                        logging.info(' fail in post query')
+                        time.sleep(10)
                 logging.info('')
                 count += 1
                 whole_count += 1
@@ -449,14 +449,37 @@ class CianParser():
 
 
 if __name__ == '__main__':
+    tokens = {
+        'token1': '31a6ed51-bc46-4d1d-9ac9-e3c2e22d2628',
+        'token2': '1e083c60-3838-4701-bdae-e8629cf7575c'
+    }
+    urls = {
+        'msk_url': 'https://www.cian.ru/cat.php?deal_type=sale&engine_version=2&maxtarea={maxtarea}&mintarea={mintarea}&object_type%5B0%5D={type}&offer_type=flat&p={page}&region=1',
+        'spb_url': 'https://www.cian.ru/cat.php?deal_type=sale&engine_version=2&maxtarea={maxtarea}&mintarea={mintarea}&object_type%5B0%5D={type}&offer_type=flat&p={page}&region=2'
+    }
+    parse_types = {
+        'new': 1,
+        'sec': 2
+    }
+    yand_api_token = tokens[sys.argv[2]]
+
+    print('params', sys.argv, flush=True)
+
+    url_for_start = urls[sys.argv[0]]
+    parse_type = parse_types[sys.argv[1]]
+    try:
+        cycle = sys.argv[3]
+    except:
+        cycle = 1
+
 
     parser = CianParser()
 
-    cycle = random.randint(0, 1)
+    # cycle = random.randint(0, 1)
 
     while True:
 
-        cycle += 1
+        # cycle += 1
 
         if cycle % 2 != 0:
 
@@ -481,21 +504,19 @@ if __name__ == '__main__':
             whole_count = 0
 
             for mintarea, maxtarea in zip(mintareas, maxtareas):
-                for i in range(1, 3):
-                    logging.info('type ' + str(i))
-                    msk_url = 'https://www.cian.ru/cat.php?deal_type=sale&engine_version=2&maxtarea={maxtarea}&mintarea={mintarea}&object_type%5B0%5D={type}&offer_type=flat&p={page}&region=1'
-                    spb_url = 'https://www.cian.ru/cat.php?deal_type=sale&engine_version=2&maxtarea={maxtarea}&mintarea={mintarea}&object_type%5B0%5D={type}&offer_type=flat&p={page}&region=2'
-                    url = msk_url.format(
-                        maxtarea=maxtarea,
-                        mintarea=mintarea,
-                        type=i,
-                        page=1
-                    )
-                    url = url.replace('p=1', 'p={}')
-                    logging.info(' parsing from ' + str(mintarea) + ' to ' + str(maxtarea))
-                    whole_parsed_count, whole_saved_count, whole_count = parser.parse(url, whole_parsed_count,
-                                                                                      whole_saved_count,
-                                                                                      whole_count)
+                # for i in range(1, 3):
+                    # logging.info('type ' + str(i))
+                url = url_for_start.format(
+                    maxtarea=maxtarea,
+                    mintarea=mintarea,
+                    type=parse_type,
+                    page=1
+                )
+                url = url.replace('p=1', 'p={}')
+                logging.info(' parsing from ' + str(mintarea) + ' to ' + str(maxtarea))
+                whole_parsed_count, whole_saved_count, whole_count = parser.parse(url, whole_parsed_count,
+                                                                                  whole_saved_count,
+                                                                                  whole_count)
                 logging.info('')
 
                 time.sleep(10)
