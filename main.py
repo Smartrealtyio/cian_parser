@@ -13,7 +13,7 @@ import os
 import re
 import random
 
-logging.basicConfig(filename="parsing.log", level=logging.INFO)
+# logging.basicConfig(filename="parsing.log", level=logging.INFO)
 
 
 class CianParser():
@@ -471,8 +471,10 @@ if __name__ == '__main__':
     parse_type = parse_types[sys.argv[2]]
     try:
         cycle = int(sys.argv[3])
+        logging.basicConfig(filename='closer.log', level=logging.INFO)
     except:
         cycle = 1
+        logging.basicConfig(filename=sys.argv[1] + '_' + sys.argv[2] + '.log', level=logging.INFO)
 
 
     parser = CianParser()
