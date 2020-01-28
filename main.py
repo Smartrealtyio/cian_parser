@@ -449,26 +449,28 @@ class CianParser():
 
 
 if __name__ == '__main__':
+    print('params', sys.argv, flush=True)
     tokens = {
-        'token1': '31a6ed51-bc46-4d1d-9ac9-e3c2e22d2628',
-        'token2': '1e083c60-3838-4701-bdae-e8629cf7575c'
+        'msk': '31a6ed51-bc46-4d1d-9ac9-e3c2e22d2628',
+        'spb': '1e083c60-3838-4701-bdae-e8629cf7575c'
     }
     urls = {
-        'msk_url': 'https://www.cian.ru/cat.php?deal_type=sale&engine_version=2&maxtarea={maxtarea}&mintarea={mintarea}&object_type%5B0%5D={type}&offer_type=flat&p={page}&region=1',
-        'spb_url': 'https://www.cian.ru/cat.php?deal_type=sale&engine_version=2&maxtarea={maxtarea}&mintarea={mintarea}&object_type%5B0%5D={type}&offer_type=flat&p={page}&region=2'
+        'msk': 'https://www.cian.ru/cat.php?deal_type=sale&engine_version=2&maxtarea={maxtarea}&mintarea={mintarea}&object_type%5B0%5D={type}&offer_type=flat&p={page}&region=1',
+        'spb': 'https://www.cian.ru/cat.php?deal_type=sale&engine_version=2&maxtarea={maxtarea}&mintarea={mintarea}&object_type%5B0%5D={type}&offer_type=flat&p={page}&region=2'
     }
     parse_types = {
-        'new': 1,
-        'sec': 2
+        'sec': 1,
+        'new': 2
     }
-    yand_api_token = tokens[sys.argv[2]]
 
-    print('params', sys.argv, flush=True)
+    yand_api_token = tokens[sys.argv[1]]
 
-    url_for_start = urls[sys.argv[0]]
-    parse_type = parse_types[sys.argv[1]]
+    # print('params', sys.argv, flush=True)
+
+    url_for_start = urls[sys.argv[1]]
+    parse_type = parse_types[sys.argv[2]]
     try:
-        cycle = sys.argv[3]
+        cycle = int(sys.argv[3])
     except:
         cycle = 1
 
