@@ -65,6 +65,12 @@ class CianParser():
 
         soup = self.captcha_check(url)
 
+        # is_closed
+        try:
+            soup.find('div', {'class': 'a10a3f92e9--container--1In69'}).text
+        except:
+            return
+
         try:
             address = soup.find('div', {'class': 'a10a3f92e9--geo--18qoo'}).find('span').get('content').split(',')
             address = [i.strip() for i in address]
@@ -438,10 +444,18 @@ class CianParser():
             time.sleep(1)
             result = self.parse_flat_info('https://www.cian.ru/sale/flat/' + str(offer[0]))
             if not result:
-                logging.info(' CLOSED')
-                response = requests.post('http://5.9.121.164:8085/api/closing/',
-                                         json=json.dumps([str(offer[0])])).content
-                logging.info(' ' + str(json.loads(response)['result']))
+                if result is None:
+                    logging.info(' CLOSED')
+                    logging.info(str(offer[0]))
+                    response = requests.post('http://5.9.121.164:8085/api/closing/',
+                                             json=json.dumps([str(offer[0])])).content
+                    logging.info(' ' + str(json.loads(response)['result']))
+                else:
+                    logging.info(' DELETED')
+                    logging.info(str(offer[0]))
+                    response = requests.post('http://5.9.121.164:8085/api/deleting/',
+                                             json=json.dumps([str(offer[0])])).content
+                    logging.info(' ' + str(json.loads(response)['result']))
             else:
                 logging.info(' opened')
 
