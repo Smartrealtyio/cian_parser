@@ -68,8 +68,9 @@ class CianParser():
         # is_closed
         try:
             soup.find('div', {'class': 'a10a3f92e9--container--1In69'}).text
-        except:
             return
+        except:
+            pass
 
         try:
             address = soup.find('div', {'class': 'a10a3f92e9--geo--18qoo'}).find('span').get('content').split(',')
