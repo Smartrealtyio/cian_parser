@@ -147,9 +147,11 @@ class CianParser():
             for metro, data in metros.items():
                 metro_address = ''
                 try:
+                    token = tokens[random.randint(0, len(tokens) - 1)]
+                    print(token, flush=True)
                     metro_address = address[0] + ',метро ' + metro
                     coords_response = requests.get(
-                        f'https://geocode-maps.yandex.ru/1.x/?apikey={tokens[random.randint(0, len(tokens)-1)]}&format=json&geocode={metro_address}',
+                        f'https://geocode-maps.yandex.ru/1.x/?apikey={token}&format=json&geocode={metro_address}',
                         timeout=5).text
                     coords = \
                         json.loads(coords_response)['response']['GeoObjectCollection']['featureMember'][0]['GeoObject'][
@@ -281,8 +283,10 @@ class CianParser():
                 rooms_count = -1
 
             try:
+                token = tokens[random.randint(0, len(tokens)-1)]
+                print(token, flush=True)
                 coords_response = requests.get(
-                    f'https://geocode-maps.yandex.ru/1.x/?apikey={tokens[random.randint(0, len(tokens)-1)]}&format=json&geocode={address}',
+                    f'https://geocode-maps.yandex.ru/1.x/?apikey={token}&format=json&geocode={address}',
                     timeout=5).text
                 coords = \
                     json.loads(coords_response)['response']['GeoObjectCollection']['featureMember'][0]['GeoObject'][
