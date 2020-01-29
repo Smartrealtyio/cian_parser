@@ -149,7 +149,7 @@ class CianParser():
                 try:
                     metro_address = address[0] + ',метро ' + metro
                     coords_response = requests.get(
-                        f'https://geocode-maps.yandex.ru/1.x/?apikey={yand_api_token}&format=json&geocode={metro_address}',
+                        f'https://geocode-maps.yandex.ru/1.x/?apikey={tokens[random.randint(0, len(tokens)-1)]}&format=json&geocode={metro_address}',
                         timeout=5).text
                     coords = \
                         json.loads(coords_response)['response']['GeoObjectCollection']['featureMember'][0]['GeoObject'][
@@ -282,7 +282,7 @@ class CianParser():
 
             try:
                 coords_response = requests.get(
-                    f'https://geocode-maps.yandex.ru/1.x/?apikey={yand_api_token}&format=json&geocode={address}',
+                    f'https://geocode-maps.yandex.ru/1.x/?apikey={tokens[random.randint(0, len(tokens)-1)]}&format=json&geocode={address}',
                     timeout=5).text
                 coords = \
                     json.loads(coords_response)['response']['GeoObjectCollection']['featureMember'][0]['GeoObject'][
@@ -466,10 +466,15 @@ class CianParser():
 
 if __name__ == '__main__':
     print('params', sys.argv, flush=True)
-    tokens = {
-        'msk': '31a6ed51-bc46-4d1d-9ac9-e3c2e22d2628',
-        'spb': '1e083c60-3838-4701-bdae-e8629cf7575c'
-    }
+    tokens = [
+        # '31a6ed51-bc46-4d1d-9ac9-e3c2e22d2628',
+        # '1e083c60-3838-4701-bdae-e8629cf7575c',
+        'bad43b9d-1630-43fc-a155-32e36b277ce4',
+        '430aa5e7-4516-434d-90d2-b8d252afed9c',
+        '03b6c142-f345-419e-beb4-2c71714adbed',
+        'cfa418d1-0b0b-48bd-92d7-1a2cc9ba4e21',
+        '32aa5664-8fc3-438f-8b4f-174d950beafc'
+    ]
     urls = {
         'msk': 'https://www.cian.ru/cat.php?deal_type=sale&engine_version=2&maxtarea={maxtarea}&mintarea={mintarea}&object_type%5B0%5D={type}&offer_type=flat&p={page}&region=1',
         'spb': 'https://www.cian.ru/cat.php?deal_type=sale&engine_version=2&maxtarea={maxtarea}&mintarea={mintarea}&object_type%5B0%5D={type}&offer_type=flat&p={page}&region=2'
@@ -479,7 +484,7 @@ if __name__ == '__main__':
         'new': 2
     }
 
-    yand_api_token = tokens[sys.argv[1]]
+    # yand_api_token = tokens[sys.argv[1]]
 
     # print('params', sys.argv, flush=True)
 
