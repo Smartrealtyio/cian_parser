@@ -524,7 +524,7 @@ if __name__ == '__main__':
             whole_count = 0
 
             for mintarea, maxtarea in zip(mintareas, maxtareas):
-                for i in range(1, 3):
+                for i in range(2, 0, -1):
                     # logging.info('type ' + str(i))
                     url = url_for_start.format(
                         maxtarea=maxtarea,
