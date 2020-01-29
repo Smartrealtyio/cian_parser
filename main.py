@@ -452,11 +452,12 @@ class CianParser():
                                              json=json.dumps([str(offer[0])])).content
                     logging.info(' ' + str(json.loads(response)['result']))
                 else:
-                    logging.info(' DELETED')
-                    logging.info(str(offer[0]))
-                    response = requests.post('http://5.9.121.164:8085/api/deleting/',
-                                             json=json.dumps([str(offer[0])])).content
-                    logging.info(' ' + str(json.loads(response)['result']))
+                    # logging.info(' DELETED')
+                    # logging.info(str(offer[0]))
+                    # response = requests.post('http://5.9.121.164:8085/api/deleting/',
+                    #                          json=json.dumps([str(offer[0])])).content
+                    # logging.info(' ' + str(json.loads(response)['result']))
+                    pass
             else:
                 logging.info(' opened')
 
@@ -523,19 +524,19 @@ if __name__ == '__main__':
             whole_count = 0
 
             for mintarea, maxtarea in zip(mintareas, maxtareas):
-                # for i in range(1, 3):
+                for i in range(1, 3):
                     # logging.info('type ' + str(i))
-                url = url_for_start.format(
-                    maxtarea=maxtarea,
-                    mintarea=mintarea,
-                    type=parse_type,
-                    page=1
-                )
-                url = url.replace('p=1', 'p={}')
-                logging.info(' parsing from ' + str(mintarea) + ' to ' + str(maxtarea))
-                whole_parsed_count, whole_saved_count, whole_count = parser.parse(url, whole_parsed_count,
-                                                                                  whole_saved_count,
-                                                                                  whole_count)
+                    url = url_for_start.format(
+                        maxtarea=maxtarea,
+                        mintarea=mintarea,
+                        type=i,
+                        page=1
+                    )
+                    url = url.replace('p=1', 'p={}')
+                    logging.info(' parsing from ' + str(mintarea) + ' to ' + str(maxtarea))
+                    whole_parsed_count, whole_saved_count, whole_count = parser.parse(url, whole_parsed_count,
+                                                                                      whole_saved_count,
+                                                                                      whole_count)
                 logging.info('')
 
                 time.sleep(10)
