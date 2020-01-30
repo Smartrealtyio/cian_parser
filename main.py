@@ -471,8 +471,8 @@ class CianParser():
 if __name__ == '__main__':
     print('params', sys.argv, flush=True)
     tokens = [
-        # '31a6ed51-bc46-4d1d-9ac9-e3c2e22d2628',
-        # '1e083c60-3838-4701-bdae-e8629cf7575c',
+        '31a6ed51-bc46-4d1d-9ac9-e3c2e22d2628',
+        '1e083c60-3838-4701-bdae-e8629cf7575c',
         'bad43b9d-1630-43fc-a155-32e36b277ce4',
         '430aa5e7-4516-434d-90d2-b8d252afed9c',
         '03b6c142-f345-419e-beb4-2c71714adbed',
