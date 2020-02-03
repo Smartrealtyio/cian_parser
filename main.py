@@ -285,7 +285,7 @@ class CianParser():
 
             try:
                 token = tokens[random.randint(0, len(tokens)-1)]
-                print(token, flush=True)
+                # print(token, flush=True)
                 coords_response = requests.get(
                     f'https://geocode-maps.yandex.ru/1.x/?apikey={token}&format=json&geocode={address}',
                     timeout=5).text
