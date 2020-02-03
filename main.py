@@ -21,7 +21,8 @@ class CianParser():
     chrome_options.add_argument('--headless')
     chrome_options.add_argument('--no-sandbox')
     chrome_options.add_argument('--disable-dev-shm-usage')
-    driver = webdriver.Chrome(executable_path="/home/manzoni/CianParser/chromedriver", chrome_options=chrome_options)
+    driver = webdriver.Chrome(executable_path="/home/realtor/CianParser/chromedriver", chrome_options=chrome_options)
+    # driver = webdriver.Chrome(executable_path="/home/manzoni/CianParser/chromedriver", chrome_options=chrome_options)
     # driver = webdriver.Chrome(executable_path="/Users/egor/PycharmProjects/chromedriver")
     # yand_api_token = '31a6ed51-bc46-4d1d-9ac9-e3c2e22d2628'
     # yand_api_token = '1e083c60-3838-4701-bdae-e8629cf7575c'
