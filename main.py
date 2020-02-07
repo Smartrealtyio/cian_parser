@@ -12,8 +12,8 @@ import sys
 import os
 import re
 import random
+from settings_local import *
 
-# logging.basicConfig(filename="parsing.log", level=logging.INFO)
 
 
 class CianParser():
@@ -21,11 +21,8 @@ class CianParser():
     chrome_options.add_argument('--headless')
     chrome_options.add_argument('--no-sandbox')
     chrome_options.add_argument('--disable-dev-shm-usage')
-    driver = webdriver.Chrome(executable_path="/home/realtor/CianParser/chromedriver", chrome_options=chrome_options)
-    # driver = webdriver.Chrome(executable_path="/home/manzoni/CianParser/chromedriver", chrome_options=chrome_options)
-    # driver = webdriver.Chrome(executable_path="/Users/egor/PycharmProjects/chromedriver")
-    # yand_api_token = '31a6ed51-bc46-4d1d-9ac9-e3c2e22d2628'
-    # yand_api_token = '1e083c60-3838-4701-bdae-e8629cf7575c'
+    driver = webdriver.Chrome(executable_path=path_to_driver, chrome_options=chrome_options)
+
     street_names = {
         'ул.': 'улица',
         'пер.': 'переулок',
@@ -175,18 +172,7 @@ class CianParser():
                 })
 
             city = address[0]
-            # district_pieces_msk = address[-3].split(' ')
-            # district_pieces_spb = address[2].split(' ')
-            # if district_pieces_msk[0] in self.district_names:
-            #     district = " ".join(district_pieces_msk[1:])
-            # elif district_pieces_spb[0] in self.district_names:
-            #     district = " ".join(district_pieces_spb[1:])
-            # elif district_pieces_msk[-1] in self.district_names:
-            #     district = " ".join(district_pieces_msk[:-1])
-            # elif district_pieces_spb[-1] in self.district_names:
-            #     district = " ".join(district_pieces_spb[:-1])
-            # else:
-            #     district = " ".join(district_pieces)
+
             district = ''
             for district_name in self.district_names:
                 for address_piece in address:
@@ -285,7 +271,6 @@ class CianParser():
 
             try:
                 token = tokens[random.randint(0, len(tokens)-1)]
-                # print(token, flush=True)
                 coords_response = requests.get(
                     f'https://geocode-maps.yandex.ru/1.x/?apikey={token}&format=json&geocode={address}',
                     timeout=5).text
@@ -400,8 +385,6 @@ class CianParser():
             logging.info(' ' + str(len(new_urls)))
             for flat_url in new_urls:
                 result = None
-                # try:
-                # logging.info(' INFO' + str(info))
                 result = self.parse_flat_info(flat_url)
                 if result:
                     result['flat_type'] = self.flat_types[flat_type-1]
@@ -410,14 +393,11 @@ class CianParser():
                     logging.info(' ' + str(result))
                     parsed_count += 1
                     whole_parsed_count += 1
-                # except:
                 else:
                     logging.info(' fail in parsing ' + str(flat_url))
-                    # info = re.findall(r'object_type%5B0%5D=(\d)', url)[0]
-                    # logging.info(' INFO' + str(info))
                 if result:
                     try:
-                        response = requests.post('http://5.9.121.164:8085/api/save/', json=json.dumps(result),
+                        response = requests.post(saving_api_url + '/api/save/', json=json.dumps(result),
                                                  timeout=10).content
                         if json.loads(response)['result']:
                             logging.info(' saved ok')
@@ -432,7 +412,6 @@ class CianParser():
                 count += 1
                 whole_count += 1
 
-                # time.sleep(1)
 
             logging.info(' end for page ' + str(count) + ' parsed ' + str(parsed_count) + ' saved ' + str(saved_count))
             logging.info(
@@ -443,7 +422,7 @@ class CianParser():
 
 
     def flats_closing_check(self):
-        response = requests.get('http://5.9.121.164:8085/api/flats/').content
+        response = requests.get(saving_api_url + '/api/flats/').content
         offers = json.loads(response)['result']
 
         for offer in offers:
@@ -453,7 +432,7 @@ class CianParser():
                 if result is None:
                     logging.info(' CLOSED')
                     logging.info(str(offer[0]))
-                    response = requests.post('http://5.9.121.164:8085/api/closing/',
+                    response = requests.post(saving_api_url + '/api/closing/',
                                              json=json.dumps([str(offer[0])])).content
                     logging.info(' ' + str(json.loads(response)['result']))
                 else:
@@ -471,15 +450,6 @@ class CianParser():
 
 if __name__ == '__main__':
     print('params', sys.argv, flush=True)
-    tokens = [
-        '31a6ed51-bc46-4d1d-9ac9-e3c2e22d2628',
-        '1e083c60-3838-4701-bdae-e8629cf7575c',
-        'bad43b9d-1630-43fc-a155-32e36b277ce4',
-        '430aa5e7-4516-434d-90d2-b8d252afed9c',
-        '03b6c142-f345-419e-beb4-2c71714adbed',
-        'cfa418d1-0b0b-48bd-92d7-1a2cc9ba4e21',
-        '32aa5664-8fc3-438f-8b4f-174d950beafc'
-    ]
     urls = {
         'msk': 'https://www.cian.ru/cat.php?deal_type=sale&engine_version=2&maxtarea={maxtarea}&mintarea={mintarea}&object_type%5B0%5D={type}&offer_type=flat&p={page}&region=1',
         'spb': 'https://www.cian.ru/cat.php?deal_type=sale&engine_version=2&maxtarea={maxtarea}&mintarea={mintarea}&object_type%5B0%5D={type}&offer_type=flat&p={page}&region=2'
@@ -488,10 +458,6 @@ if __name__ == '__main__':
         'sec': 1,
         'new': 2
     }
-
-    # yand_api_token = tokens[sys.argv[1]]
-
-    # print('params', sys.argv, flush=True)
 
     url_for_start = urls[sys.argv[1]]
     parse_type = parse_types[sys.argv[2]]
