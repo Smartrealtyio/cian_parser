@@ -21,7 +21,8 @@ class CianParser():
     chrome_options.add_argument('--headless')
     chrome_options.add_argument('--no-sandbox')
     chrome_options.add_argument('--disable-dev-shm-usage')
-    driver = webdriver.Chrome(executable_path=path_to_driver, chrome_options=chrome_options)
+    driver = webdriver.Chrome(executable_path=path_to_driver, options=chrome_options)
+    # driver = webdriver.Chrome(executable_path=path_to_driver)
 
     street_names = {
         'ул.': 'улица',
@@ -85,12 +86,13 @@ class CianParser():
                     self.str_prepare(metro.find('a').text): metro.find('span').text
                 })
 
-            main_info_response = soup.find_all('div', {'class': 'a10a3f92e9--info--2ywQI'})
+            main_info_response = soup.find_all('div', {'class': 'a10a3f92e9--info-block--1dvRO'})
+            print(main_info_response)
             main_info = {}
             for info in main_info_response:
                 main_info.update({
-                    info.find('div', {'class': 'a10a3f92e9--info-title--mSyXn'}).text: info.find('div', {
-                        'class': 'a10a3f92e9--info-text--2uhvD'}).text
+                    info.find('div', {'class': 'a10a3f92e9--info-value--3ChCO'}).text: info.find('div', {
+                        'class': 'a10a3f92e9--info-title--eb60A'}).text
                 })
 
             general_info_response = soup.find_all('li', {'class': 'a10a3f92e9--item--_ipjK'})
@@ -215,6 +217,9 @@ class CianParser():
             elif 'Год постройки' in building_info:
                 built_year = int(building_info['Год постройки'])
 
+            if 'Срок сдачи' in main_info:
+
+
             is_apartment = True
             closed = False
 
@@ -312,7 +317,8 @@ class CianParser():
             }
 
             return result
-        except:
+        except Exception as error:
+            logging.info(str(error))
             return False
 
 
@@ -322,6 +328,7 @@ class CianParser():
 
     def captcha_check(self, url):
         try:
+            print(url)
             self.driver.get(url)
             soup = BeautifulSoup(self.driver.page_source, 'lxml')
             if soup.find('div', {'id': 'captcha'}):
@@ -334,11 +341,16 @@ class CianParser():
             logging.info(' connection fail... RESTARTING APP')
             time.sleep(20)
 
+            self.driver.quit()
+
+            # sys.exit()
             self.restart()
 
         except:
-            logging.info(' connection fail... RESTARTING APP')
+            logging.info(' connection fail... RESTARTING APP, UNKNOWN ERROR')
             time.sleep(20)
+
+            self.driver.quit()
 
             self.restart()
 
@@ -395,19 +407,19 @@ class CianParser():
                     whole_parsed_count += 1
                 else:
                     logging.info(' fail in parsing ' + str(flat_url))
-                if result:
-                    try:
-                        response = requests.post(saving_api_url + '/api/save/', json=json.dumps(result),
-                                                 timeout=10).content
-                        if json.loads(response)['result']:
-                            logging.info(' saved ok')
-                            saved_count += 1
-                            whole_saved_count += 1
-                        else:
-                            logging.info(' fail in saving')
-                    except:
-                        logging.info(' fail in post query')
-                        time.sleep(10)
+                # if result:
+                #     try:
+                #         response = requests.post(saving_api_url + '/api/save/', json=json.dumps(result),
+                #                                  timeout=10).content
+                #         if json.loads(response)['result']:
+                #             logging.info(' saved ok')
+                #             saved_count += 1
+                #             whole_saved_count += 1
+                #         else:
+                #             logging.info(' fail in saving')
+                #     except:
+                #         logging.info(' fail in post query')
+                #         time.sleep(10)
                 logging.info('')
                 count += 1
                 whole_count += 1
@@ -479,7 +491,7 @@ if __name__ == '__main__':
 
         if cycle % 2 != 0:
 
-            mintareas = [i for i in range(11, 110)] + [i for i in range(110, 150, 5)] + [i for i in
+            mintareas = [i for i in range(20, 110)] + [i for i in range(110, 150, 5)] + [i for i in
                                                                                          range(150, 200, 10)] + [i for i
                                                                                                                  in
                                                                                                                  range(
@@ -487,7 +499,7 @@ if __name__ == '__main__':
                                                                                                                      250,
                                                                                                                      25)] + [
                             250, 400]
-            maxtareas = [i for i in range(11, 110)] + [i for i in range(115, 155, 5)] + [i for i in
+            maxtareas = [i for i in range(20, 110)] + [i for i in range(115, 155, 5)] + [i for i in
                                                                                          range(160, 210, 10)] + [i for i
                                                                                                                  in
                                                                                                                  range(
