@@ -21,7 +21,8 @@ class CianParser():
     chrome_options.add_argument('--headless')
     chrome_options.add_argument('--no-sandbox')
     chrome_options.add_argument('--disable-dev-shm-usage')
-    driver = webdriver.Chrome(executable_path=path_to_driver, options=chrome_options)
+    # driver = webdriver.Chrome(executable_path=path_to_driver, options=chrome_options)
+    driver = webdriver.Firefox(executable_path=path_to_driver, options=chrome_options)
     # driver = webdriver.Chrome(executable_path=path_to_driver)
 
     street_names = {
