@@ -86,14 +86,28 @@ class CianParser():
                     self.str_prepare(metro.find('a').text): metro.find('span').text
                 })
 
-            main_info_response = soup.find_all('div', {'class': 'a10a3f92e9--info-block--1dvRO'})
-            print(main_info_response)
+            main_info_response = soup.find_all('div', {'class': 'a10a3f92e9--info--3pFQf'})
+            # print(main_info_response)
             main_info = {}
             for info in main_info_response:
                 main_info.update({
-                    info.find('div', {'class': 'a10a3f92e9--info-value--3ChCO'}).text: info.find('div', {
-                        'class': 'a10a3f92e9--info-title--eb60A'}).text
+                    info.find('div', {'class': 'a10a3f92e9--info-title--eb60A'}).text: info.find('div', {
+                        'class': 'a10a3f92e9--info-value--3ChCO'}).text
                 })
+
+            agency_response = soup.find_all('h2', {'class': 'a10a3f92e9--title--2gUWg'})
+            if agency_response:
+                # if agency_response[0].text.split(' ')[0] == 'ID' and agency_response[0].text.split(' ')[1].isdigit():
+                #     agency = None
+                # else:
+                    agency = agency_response[0].text
+            else:
+                agency = None
+
+            is_rented = True
+            is_rented_info = soup.find_all('span', {'class': 'a10a3f92e9--status--NCVlN'})
+            if is_rented_info:
+                is_rented = False if 'сдача' in is_rented_info[0].text else True
 
             general_info_response = soup.find_all('li', {'class': 'a10a3f92e9--item--_ipjK'})
             general_info = {}
@@ -200,13 +214,13 @@ class CianParser():
             street = ' '.join(street)
             house_number = address[-1]
 
-            full_sq = float(main_info['Общая'].split(' ')[0].replace(',', '.'))
+            full_sq = float(main_info['Общая'].split('\xa0')[0].replace(',', '.'))
             kitchen_sq = -1
             life_sq = -1
             if 'Жилая' in main_info:
-                life_sq = float(main_info['Жилая'].split(' ')[0].replace(',', '.'))
+                life_sq = float(main_info['Жилая'].split('\xa0')[0].replace(',', '.'))
             if 'Кухня' in main_info:
-                kitchen_sq = float(main_info['Кухня'].split(' ')[0].replace(',', '.'))
+                kitchen_sq = float(main_info['Кухня'].split('\xa0')[0].replace(',', '.'))
 
             floor = int(main_info['Этаж'].split(' ')[0])
             max_floor = int(main_info['Этаж'].split(' ')[-1])
@@ -217,8 +231,11 @@ class CianParser():
             elif 'Год постройки' in building_info:
                 built_year = int(building_info['Год постройки'])
 
+            rent_quarter = None
+            rent_year = None
             if 'Срок сдачи' in main_info:
-
+                rent_quarter = int(main_info['Срок сдачи'].split(' кв. ')[0])
+                rent_year = int(main_info['Срок сдачи'].split(' кв. ')[1])
 
             is_apartment = True
             closed = False
@@ -313,7 +330,11 @@ class CianParser():
                 'metros': metros,
                 'longitude': longitude,
                 'latitude': latitude,
-                'created_at': created_at
+                'created_at': created_at,
+                'agency': agency,
+                'is_rented': is_rented,
+                'rent_quarter': rent_quarter,
+                'rent_year': rent_year
             }
 
             return result
@@ -328,7 +349,7 @@ class CianParser():
 
     def captcha_check(self, url):
         try:
-            print(url)
+            logging.info(url)
             self.driver.get(url)
             soup = BeautifulSoup(self.driver.page_source, 'lxml')
             if soup.find('div', {'id': 'captcha'}):
@@ -407,19 +428,19 @@ class CianParser():
                     whole_parsed_count += 1
                 else:
                     logging.info(' fail in parsing ' + str(flat_url))
-                # if result:
-                #     try:
-                #         response = requests.post(saving_api_url + '/api/save/', json=json.dumps(result),
-                #                                  timeout=10).content
-                #         if json.loads(response)['result']:
-                #             logging.info(' saved ok')
-                #             saved_count += 1
-                #             whole_saved_count += 1
-                #         else:
-                #             logging.info(' fail in saving')
-                #     except:
-                #         logging.info(' fail in post query')
-                #         time.sleep(10)
+                if result:
+                    try:
+                        response = requests.post(saving_api_url + '/api/save/', json=json.dumps(result),
+                                                 timeout=10).content
+                        if json.loads(response)['result']:
+                            logging.info(' saved ok')
+                            saved_count += 1
+                            whole_saved_count += 1
+                        else:
+                            logging.info(' fail in saving')
+                    except:
+                        logging.info(' fail in post query')
+                        time.sleep(10)
                 logging.info('')
                 count += 1
                 whole_count += 1
@@ -442,11 +463,15 @@ class CianParser():
             result = self.parse_flat_info('https://www.cian.ru/sale/flat/' + str(offer[0]))
             if not result:
                 if result is None:
-                    logging.info(' CLOSED')
-                    logging.info(str(offer[0]))
-                    response = requests.post(saving_api_url + '/api/closing/',
-                                             json=json.dumps([str(offer[0])])).content
-                    logging.info(' ' + str(json.loads(response)['result']))
+                    try:
+                        logging.info(' CLOSED')
+                        logging.info(str(offer[0]))
+                        response = requests.post(saving_api_url + '/api/closing/',
+                                                 json=json.dumps([str(offer[0])])).content
+                        logging.info(' ' + str(json.loads(response)['result']))
+                    except:
+                        logging.info(' save api connection fail, sleep 60')
+                        time.sleep(60)
                 else:
                     # logging.info(' DELETED')
                     # logging.info(str(offer[0]))
@@ -491,7 +516,7 @@ if __name__ == '__main__':
 
         if cycle % 2 != 0:
 
-            mintareas = [i for i in range(20, 110)] + [i for i in range(110, 150, 5)] + [i for i in
+            mintareas = [i for i in range(11, 110)] + [i for i in range(110, 150, 5)] + [i for i in
                                                                                          range(150, 200, 10)] + [i for i
                                                                                                                  in
                                                                                                                  range(
@@ -499,7 +524,7 @@ if __name__ == '__main__':
                                                                                                                      250,
                                                                                                                      25)] + [
                             250, 400]
-            maxtareas = [i for i in range(20, 110)] + [i for i in range(115, 155, 5)] + [i for i in
+            maxtareas = [i for i in range(11, 110)] + [i for i in range(115, 155, 5)] + [i for i in
                                                                                          range(160, 210, 10)] + [i for i
                                                                                                                  in
                                                                                                                  range(
