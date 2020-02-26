@@ -6,7 +6,8 @@ import psycopg2
 import time
 from selenium import webdriver
 from selenium.common.exceptions import TimeoutException
-from selenium.webdriver.chrome.options import Options
+# from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.firefox.options import Options
 import logging
 import sys
 import os
@@ -17,13 +18,12 @@ from settings_local import *
 
 
 class CianParser():
-    # chrome_options = Options()
-    # chrome_options.add_argument('--headless')
-    # chrome_options.add_argument('--no-sandbox')
-    # chrome_options.add_argument('--disable-dev-shm-usage')
-    # driver = webdriver.Chrome(executable_path=path_to_driver, options=chrome_options)
-    driver = webdriver.Firefox(executable_path=path_to_driver)
-    # driver = webdriver.Chrome(executable_path=path_to_driver)
+    options = Options()
+    options.add_argument('--headless')
+    options.add_argument('--no-sandbox')
+    options.add_argument('--disable-dev-shm-usage')
+    # driver = webdriver.Chrome(executable_path=path_to_driver, options=options)
+    driver = webdriver.Firefox(executable_path=path_to_driver, options=options)
 
     street_names = {
         'ул.': 'улица',
@@ -76,8 +76,10 @@ class CianParser():
             address = soup.find('div', {'class': 'a10a3f92e9--geo--18qoo'}).find('span').get('content').split(',')
             address = [i.strip() for i in address]
 
-            image = soup.find_all('img', {'class': 'fotorama__img'})[0].get('src')
-
+            try:
+                image = soup.find_all('img', {'class': 'fotorama__img'})[0].get('src')
+            except:
+                image = 'fail'
             rooms_info = soup.find('h1', {'class': 'a10a3f92e9--title--2Widg'}).text.split(',')[0].lower()
 
             metros_response = soup.find_all('li', {'class': 'a10a3f92e9--underground--kONgx'})
@@ -140,7 +142,7 @@ class CianParser():
 
             self.driver.find_element_by_class_name('a10a3f92e9--container--1wUf1').click()
             import time
-            time.sleep(1)
+            time.sleep(2)
 
             soup = BeautifulSoup(self.driver.page_source, 'lxml')
             date = soup.find('div', {'class': 'a10a3f92e9--information--AyP9e'}).find('div').text.split(' ')[-1].strip()
@@ -266,6 +268,9 @@ class CianParser():
                 elif date[0] == 'вчера':
                     day = (datetime.now() - timedelta(hours=24)).day
                     month = (datetime.now() - timedelta(hours=24)).month
+                elif date[0] == 'позавчера':
+                    day = (datetime.now() - timedelta(hours=48)).day
+                    month = (datetime.now() - timedelta(hours=48)).month
                 else:
                     day = int(date[0])
                     month = int(self.months[date[1]])
@@ -504,7 +509,7 @@ if __name__ == '__main__':
         logging.basicConfig(filename='closer.log', level=logging.INFO)
     except:
         cycle = 1
-        logging.basicConfig(filename=sys.argv[1] + '_' + sys.argv[2] + '.log', level=logging.INFO)
+        logging.basicConfig(filename=sys.argv[1] + '_' + sys.argv[2] + '2.log', level=logging.INFO)
 
 
     parser = CianParser()
