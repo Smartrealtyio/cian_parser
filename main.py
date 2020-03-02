@@ -169,7 +169,7 @@ class CianParser():
                     metro_address = address[0] + ',метро ' + metro
                     coords_response = requests.get(
                         f'https://geocode-maps.yandex.ru/1.x/?apikey={token}&format=json&geocode={metro_address}',
-                        timeout=5).text
+                        timeout=10).text
                     coords = \
                         json.loads(coords_response)['response']['GeoObjectCollection']['featureMember'][0]['GeoObject'][
                             'Point'][
@@ -237,8 +237,11 @@ class CianParser():
             rent_quarter = None
             rent_year = None
             if 'Срок сдачи' in main_info:
-                rent_quarter = int(main_info['Срок сдачи'].split(' кв. ')[0])
-                rent_year = int(main_info['Срок сдачи'].split(' кв. ')[1])
+                if 'кв' in main_info['Срок сдачи']:
+                    rent_quarter = int(main_info['Срок сдачи'].split(' кв. ')[0])
+                    rent_year = int(main_info['Срок сдачи'].split(' кв. ')[1])
+                else:
+                    rent_year = int(main_info['Срок сдачи'])
 
             is_apartment = True
             closed = False
@@ -301,7 +304,7 @@ class CianParser():
                 token = tokens[random.randint(0, len(tokens)-1)]
                 coords_response = requests.get(
                     f'https://geocode-maps.yandex.ru/1.x/?apikey={token}&format=json&geocode={address}',
-                    timeout=5).text
+                    timeout=10).text
                 coords = \
                     json.loads(coords_response)['response']['GeoObjectCollection']['featureMember'][0]['GeoObject'][
                         'Point'][
