@@ -29,6 +29,7 @@ class CianParser():
         'ул.': 'улица',
         'пер.': 'переулок',
         'ш.': 'шоссе',
+
         'просп.': 'проспект',
         'бул.': 'бульвар',
         'деревня': 'деревня'
@@ -370,18 +371,12 @@ class CianParser():
         except TimeoutException:
             logging.info(' connection fail... RESTARTING APP')
             time.sleep(20)
-
             self.driver.quit()
-
-            # sys.exit()
             self.restart()
-
         except:
             logging.info(' connection fail... RESTARTING APP, UNKNOWN ERROR')
             time.sleep(20)
-
             self.driver.quit()
-
             self.restart()
 
     def get_flats_url(self, url):
@@ -525,22 +520,10 @@ if __name__ == '__main__':
 
         if cycle % 2 != 0:
 
-            mintareas = [i for i in range(11, 110)] + [i for i in range(110, 150, 5)] + [i for i in
-                                                                                         range(150, 200, 10)] + [i for i
-                                                                                                                 in
-                                                                                                                 range(
-                                                                                                                     200,
-                                                                                                                     250,
-                                                                                                                     25)] + [
-                            250, 400]
-            maxtareas = [i for i in range(11, 110)] + [i for i in range(115, 155, 5)] + [i for i in
-                                                                                         range(160, 210, 10)] + [i for i
-                                                                                                                 in
-                                                                                                                 range(
-                                                                                                                     225,
-                                                                                                                     275,
-                                                                                                                     25)] + [
-                            400, 3000]
+            mintareas = [i for i in range(11, 110)] + [i for i in range(110, 150, 5)] \
+                        + [i for i in range(150, 200, 10)] + [i for i in range(200, 250, 25)] + [250, 400]
+            maxtareas = [i for i in range(11, 110)] + [i for i in range(115, 155, 5)] \
+                        + [i for i in range(160, 210, 10)] + [i for i in range(225, 275, 25)] + [400, 3000]
             whole_parsed_count = 0
             whole_saved_count = 0
             whole_count = 0
