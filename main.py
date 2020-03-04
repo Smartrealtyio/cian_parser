@@ -90,13 +90,13 @@ class CianParser():
                     self.str_prepare(metro.find('a').text): metro.find('span').text
                 })
 
-            main_info_response = soup.find_all('div', {'class': 'a10a3f92e9--info--3pFQf'})
+            main_info_response = soup.find_all('div', {'class': 'a10a3f92e9--info--3XiXi'})
             # print(main_info_response)
             main_info = {}
             for info in main_info_response:
                 main_info.update({
-                    info.find('div', {'class': 'a10a3f92e9--info-title--eb60A'}).text: info.find('div', {
-                        'class': 'a10a3f92e9--info-value--3ChCO'}).text
+                    info.find('div', {'class': 'a10a3f92e9--info-title--2bXM9'}).text: info.find('div', {
+                        'class': 'a10a3f92e9--info-value--18c8R'}).text
                 })
 
             agency_response = soup.find_all('h2', {'class': 'a10a3f92e9--title--2gUWg'})
