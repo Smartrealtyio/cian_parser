@@ -62,16 +62,18 @@ class CianParser():
     def str_prepare(self, s):
         return s.replace('ё', 'е').replace('Ё', 'Е')
 
+    def is_closed(self, url):
+        soup = self.captcha_check(url)
+
+        try:
+            soup.find('div', {'class': 'a10a3f92e9--container--1In69'}).text
+            return True
+        except:
+            return False
+
     def parse_flat_info(self, url):
 
         soup = self.captcha_check(url)
-
-        # is_closed
-        try:
-            soup.find('div', {'class': 'a10a3f92e9--container--1In69'}).text
-            return
-        except:
-            pass
 
         try:
             address = soup.find('div', {'class': 'a10a3f92e9--geo--18qoo'}).find('span').get('content').split(',')
@@ -464,25 +466,17 @@ class CianParser():
 
         for offer in offers:
             time.sleep(1)
-            result = self.parse_flat_info('https://www.cian.ru/sale/flat/' + str(offer[0]))
-            if not result:
-                if result is None:
-                    try:
-                        logging.info(' CLOSED')
-                        logging.info(str(offer[0]))
-                        response = requests.post(saving_api_url + '/api/closing/',
-                                                 json=json.dumps([str(offer[0])])).content
-                        logging.info(' ' + str(json.loads(response)['result']))
-                    except:
-                        logging.info(' save api connection fail, sleep 60')
-                        time.sleep(60)
-                else:
-                    # logging.info(' DELETED')
-                    # logging.info(str(offer[0]))
-                    # response = requests.post('http://5.9.121.164:8085/api/deleting/',
-                    #                          json=json.dumps([str(offer[0])])).content
-                    # logging.info(' ' + str(json.loads(response)['result']))
-                    pass
+            result = self.is_closed('https://www.cian.ru/sale/flat/' + str(offer[0]))
+            if result:
+                try:
+                    logging.info(' CLOSED')
+                    logging.info(str(offer[0]))
+                    response = requests.post(saving_api_url + '/api/closing/',
+                                             json=json.dumps([str(offer[0])])).content
+                    logging.info(' ' + str(json.loads(response)['result']))
+                except:
+                    logging.info(' save api connection fail, sleep 60')
+                    time.sleep(60)
             else:
                 logging.info(' opened')
 
