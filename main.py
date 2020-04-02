@@ -250,9 +250,14 @@ class CianParser():
             closed = False
 
             renovation = False
+            renovation_type = None
             if 'Ремонт' in general_info:
+                renovation_type = general_info['Ремонт']
                 if general_info['Ремонт'] != 'Без ремонта':
                     renovation = True
+
+            windows_view = general_info.get('Вид из окон')
+
 
             building_type_str = 'UNKNOWN'
             if 'Тип дома' in building_info:
@@ -346,7 +351,9 @@ class CianParser():
                 'agency': agency,
                 'is_rented': is_rented,
                 'rent_quarter': rent_quarter,
-                'rent_year': rent_year
+                'rent_year': rent_year,
+                'renovation_type': renovation_type,
+                'windows_view': windows_view
             }
 
             return result
