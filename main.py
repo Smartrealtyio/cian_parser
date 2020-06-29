@@ -373,19 +373,21 @@ class CianParser():
             soup = BeautifulSoup(self.driver.page_source, 'lxml')
             if soup.find('div', {'id': 'captcha'}):
                 logging.info(' captcha... sleeping')
-                time.sleep(10)
+                time.sleep(600)
                 self.captcha_check(url)
             else:
                 return soup
         except TimeoutException:
             logging.info(' connection fail... RESTARTING APP')
-            time.sleep(20)
+            time.sleep(100)
             self.driver.quit()
+            time.sleep(100)
             self.restart()
         except:
             logging.info(' connection fail... RESTARTING APP, UNKNOWN ERROR')
-            time.sleep(20)
+            time.sleep(100)
             self.driver.quit()
+            time.sleep(100)
             self.restart()
 
     def get_flats_url(self, url):
